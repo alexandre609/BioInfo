@@ -1,5 +1,6 @@
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 
 import javax.swing.*;
@@ -14,13 +15,15 @@ import javax.swing.tree.DefaultMutableTreeNode;
  */
 public class Main {
 	public static JFrame frame;
+	public static JTextField champRecherche;
 	public static JProgressBar progress;
 	public static JLabel avancement;
 	public static JTree arborescence;
 	
 	public static void main(String[] args) {
-		//Arborescence.truc();
-		//
+		Arborescence.truc();
+		Arborescence.recupererArborescence();
+		
 		//Recuperation.test();
 		//Sortie.sortieExcel();
 		creerFenetre();
@@ -40,9 +43,14 @@ public class Main {
 		frame.getContentPane().add(northPanel, BorderLayout.NORTH);
 		JButton test = new JButton("OK");
 		JLabel label = new JLabel("Recherche :");
-		JTextField texte = new JTextField("\t\t");
+		champRecherche = new JTextField("\t\t");
+		champRecherche.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent arg0) {
+				arborescence.setSelectionPath(arborescence.getSelectionPath());
+			}
+		});
 		northPanel.add(label, BorderLayout.WEST);
-		northPanel.add(texte, BorderLayout.CENTER);
+		northPanel.add(champRecherche, BorderLayout.CENTER);
 		northPanel.add(test, BorderLayout.EAST);
 		
 		//Panneau central contenant l'arborescence
@@ -50,7 +58,7 @@ public class Main {
 		arborescence = new JTree(root,true);
 		JScrollPane centerPanel = new JScrollPane(arborescence);
 		frame.getContentPane().add(centerPanel, BorderLayout.CENTER);
-		centerPanel.setPreferredSize(new Dimension(600,600));
+		centerPanel.setPreferredSize(new Dimension(300,300));
 		centerPanel.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		
 		//Panneau du bas, contenant la barre de progression
@@ -58,6 +66,7 @@ public class Main {
 		frame.getContentPane().add(southPanel,BorderLayout.SOUTH);
 		avancement = new JLabel("");
 		progress = new JProgressBar();
+		progress.setVisible(false);
 		southPanel.add(progress,BorderLayout.CENTER);
 		southPanel.add(avancement,BorderLayout.SOUTH);
 		
