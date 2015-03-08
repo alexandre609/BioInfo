@@ -16,8 +16,32 @@ public class Parse {
 	    return pos;
 	}
 	
+	public static String groupeProkaryote(String ligne){
+		int indexDebut = nthOccurrence(ligne,'\t',1)+1;
+		int indexFin = ligne.indexOf("\t", indexDebut);
+		return ligne.substring(indexDebut, indexFin);
+	}
+	
+	public static String subgroupeProkaryote(String ligne){
+		int indexDebut = nthOccurrence(ligne,'\t',2)+1;
+		int indexFin = ligne.indexOf("\t", indexDebut);
+		return ligne.substring(indexDebut, indexFin);
+	}
+	
 	public static String repliconProkaryote(String ligne){
 		int indexDebut = nthOccurrence(ligne,'\t',5)+1;
+		int indexFin = ligne.indexOf("\t", indexDebut);
+		return ligne.substring(indexDebut, indexFin);
+	}
+	
+	public static String groupeEukaryote(String ligne){
+		int indexDebut = nthOccurrence(ligne,'\t',1)+1;
+		int indexFin = ligne.indexOf("\t", indexDebut);
+		return ligne.substring(indexDebut, indexFin);
+	}
+	
+	public static String subgroupeEukaryote(String ligne){
+		int indexDebut = nthOccurrence(ligne,'\t',2)+1;
 		int indexFin = ligne.indexOf("\t", indexDebut);
 		return ligne.substring(indexDebut, indexFin);
 	}

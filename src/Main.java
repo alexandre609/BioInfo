@@ -19,14 +19,17 @@ public class Main {
 	public static JProgressBar progress;
 	public static JLabel avancement;
 	public static JTree arborescence;
+	public static JScrollPane centerPanel;
 	
 	public static void main(String[] args) {
-		Arborescence.truc();
+		creerFenetre();
+		frame.setCursor(Cursor.WAIT_CURSOR);
+		Arborescence.royaumes();
 		Arborescence.recupererArborescence();
-		
+		frame.setCursor(Cursor.getDefaultCursor());
+		refreshArborescence();
 		//Recuperation.test();
 		//Sortie.sortieExcel();
-		creerFenetre();
 	}
 
 	/**
@@ -56,7 +59,7 @@ public class Main {
 		//Panneau central contenant l'arborescence
 		DefaultMutableTreeNode root = Arborescence.getSubDirs(new File("./Kingdom/"));
 		arborescence = new JTree(root,true);
-		JScrollPane centerPanel = new JScrollPane(arborescence);
+		centerPanel = new JScrollPane(arborescence);
 		frame.getContentPane().add(centerPanel, BorderLayout.CENTER);
 		centerPanel.setPreferredSize(new Dimension(300,300));
 		centerPanel.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -72,5 +75,11 @@ public class Main {
 		
 		frame.pack();
 		frame.setVisible(true);
+	}
+	
+	static void refreshArborescence(){
+		DefaultMutableTreeNode root = Arborescence.getSubDirs(new File("./Kingdom/"));
+		arborescence = new JTree(root,true);
+		centerPanel.setViewportView(arborescence);
 	}
 }
