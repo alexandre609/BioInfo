@@ -58,8 +58,20 @@ public class Parse {
 		return ligne.substring(indexDebut, indexFin);
 	}
 	
+	public static String groupeVirus(String ligne){
+		int indexDebut = nthOccurrence(ligne,'\t',1)+1;
+		int indexFin = ligne.indexOf("\t", indexDebut);
+		return ligne.substring(indexDebut, indexFin);
+	}
+	
+	public static String subgroupeVirus(String ligne){
+		int indexDebut = nthOccurrence(ligne,'\t',2)+1;
+		int indexFin = ligne.indexOf("\t", indexDebut);
+		return ligne.substring(indexDebut, indexFin);
+	}
+	
 	public static String repliconVirus(String ligne){
-		int indexDebut = nthOccurrence(ligne,'\t',8)+1;
+		int indexDebut = nthOccurrence(ligne,'\t',6)+1;
 		int indexFin = ligne.indexOf("\t", indexDebut);
 		return ligne.substring(indexDebut, indexFin);
 	}
