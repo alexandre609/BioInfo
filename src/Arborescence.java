@@ -27,10 +27,6 @@ public class Arborescence {
 		dir = new File("Kingdom/Virus");
 		if(!dir.exists())
 			dir.mkdir();
-		/*dir = new File("Kingdom/Plasmids");
-		if(!dir.exists())
-			dir.mkdir();
-		*/
 	}// http://www.ncbi.nlm.nih.gov/sviewer/viewer.cgi?tool=portal&sendto=on&log$=seqview&db=nuccore&dopt=fasta&sort=&val=672789134&from=begin&to=end&maxplex=1
 	
 	public static void recupererArborescence(){
@@ -43,6 +39,7 @@ public class Arborescence {
 			reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
 			//Première ligne = titre des colonnes
 			String line = reader.readLine(); // Il faudra probablement parser cette ligne pour avoir les numéros de colonne de chaque information
+			Parse parseur = new Parse(line);
 	    	while ((line = reader.readLine()) != null){
 	    		if(!Parse.repliconProkaryote(line).equals("-")){
 	    			File dir = new File("Kingdom/Prokaryotes/" + Parse.groupeProkaryote(line));

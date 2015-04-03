@@ -9,6 +9,42 @@ import java.net.URLConnection;
  *
  */
 public class Recuperation{
+	/**
+	 * Lance la récupération de réplicons d'après la liste présentée.
+	 * @param liste Liste des réplicons au format brut, récupéré après parsage de la liste d'Eukaryotes, Prokaryotes ou Virus.
+	 */
+	public static void truc(String liste){
+		String[] listeReplicons = liste.substring(liste.indexOf(':')+1, liste.indexOf(';')).split("/");
+		for(String id:listeReplicons){
+			recupFasta(id);
+		}
+	}
+	
+	/**
+	 * Récupère la liste du réplicon désigné par la méthode FASTA_CDS
+	 * @param id	Identifiant du réplicon à chercher
+	 * @return
+	 */
+	public static String recupFasta(String id){
+		String resultat = "";
+		BufferedReader reader = null;
+		try{
+			URL url = new URL("http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=" + id + "&rettype=fasta_cds_na&retmode=text");
+			URLConnection urlConnection = url.openConnection();
+			urlConnection.connect();
+            reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+		    
+		    String line = null;
+		    while ((line = reader.readLine()) != null) {
+		    	resultat += line +"\n";
+		    }
+		} catch (IOException ex) {
+			System.out.println("Erreur URLConnection");
+		}
+		return resultat;
+	}
+	
+	
 	public static void test(){
 		BufferedReader reader = null;
 		try{
