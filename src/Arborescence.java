@@ -31,7 +31,10 @@ public class Arborescence {
 	
 	public static void recupererArborescence(){
 		BufferedReader reader = null;
+		
+		int avancement = 0;
 		try{
+			Main.progressText("Chargement de Prokaryotes");
 			//LECTURE DES PROKARYOTES
 			URL url = new URL("http://www.ncbi.nlm.nih.gov/genomes/Genome2BE/genome2srv.cgi?action=download&orgn=&report=proks&status=50|40|30|20|&group=--%20All%20Prokaryotes%20--&subgroup=--%20All%20Prokaryotes%20--");
 			URLConnection urlConnection = url.openConnection();
@@ -41,6 +44,8 @@ public class Arborescence {
 			String line = reader.readLine(); // Il faudra probablement parser cette ligne pour avoir les numéros de colonne de chaque information
 			Parse parseur = new Parse(line);
 	    	while ((line = reader.readLine()) != null){
+	    		avancement = (avancement + 1)%100;
+	    		Main.progress(avancement);
 	    		if(!Parse.repliconProkaryote(line).equals("-")){
 	    			File dir = new File("Kingdom/Prokaryotes/" + Parse.groupeProkaryote(line));
 	    			if(!dir.exists())
@@ -55,6 +60,7 @@ public class Arborescence {
 	    		}
 	    	}
 	    	
+	    	Main.progressText("Chargement de Eukaryotes");
 	    	// LECTURE DES EUKARYOTES
 	    	url = new URL("http://www.ncbi.nlm.nih.gov/genomes/Genome2BE/genome2srv.cgi?action=download&orgn=&report=euks&status=50|40|30|20|&group=--%20All%20Eukaryota%20--&subgroup=--%20All%20Eukaryota%20--");
 	    	urlConnection = url.openConnection();
@@ -63,6 +69,8 @@ public class Arborescence {
 	    	line = reader.readLine(); // Il faudra probablement parser cette ligne pour avoir les numéros de colonne de chaque information
 	    	
 	    	while ((line = reader.readLine()) != null){
+	    		avancement = (avancement + 1)%100;
+	    		Main.progress(avancement);
 	    		if(!Parse.repliconEukaryote(line).equals("-")){
 	    			File dir = new File("Kingdom/Eukaryotes/" + Parse.groupeEukaryote(line));
 	    			if(!dir.exists())
@@ -76,6 +84,7 @@ public class Arborescence {
 	    	}
 	    	
 	    	
+	    	Main.progressText("Chargement de Virus");
 	    	//LECTURE DES VIRUS
 	    	url = new URL("http://www.ncbi.nlm.nih.gov/genomes/Genome2BE/genome2srv.cgi?action=download&orgn=&report=viruses&status=50|40|30|20|&host=All&group=--%20All%20Viruses%20--&subgroup=--%20All%20Viruses%20--");
 	    	urlConnection = url.openConnection();
@@ -84,6 +93,8 @@ public class Arborescence {
 	    	line = reader.readLine(); // Il faudra probablement parser cette ligne pour avoir les numéros de colonne de chaque information
 	    	
 	    	while ((line = reader.readLine()) != null){
+	    		avancement = (avancement + 1)%100;
+	    		Main.progress(avancement);
 	    		if(!Parse.repliconVirus(line).equals("-")){
 	    			File dir = new File("Kingdom/Virus/" + Parse.groupeVirus(line));
 	    			if(!dir.exists())
@@ -95,29 +106,7 @@ public class Arborescence {
 	    			dir.mkdir();
 	    		}
 	    	}
-	    	/*
-	    	url = new URL("http://www.ncbi.nlm.nih.gov/genomes/Genome2BE/genome2srv.cgi?action=download&orgn=&report=plasmids&king=All&group=All&subgroup=All");
-	    	urlConnection = url.openConnection();
-	    	reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
-	    	line = null;
-	    	while ((line = reader.readLine()) != null){
-	    		if(!Parse.repliconPlasmid(line).equals("-")){
-	    			File dir = new File("Kingdom/Plasmids/" + Parse.nomEspece(line));
-	    			dir.mkdir();
-	    		}else System.out.println("Plasmids : trouvé un -");
-	    	}
-	    	
-	    	url = new URL("http://www.ncbi.nlm.nih.gov/genomes/Genome2BE/genome2srv.cgi?action=download&orgn=&report=viruses&status=50|40|30|20|&host=All&group=--%20All%20Viruses%20--&subgroup=--%20All%20Viruses%20--");
-	    	urlConnection = url.openConnection();
-	    	reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
-	    	line = null;
-	    	while ((line = reader.readLine()) != null){
-	    		if(!Parse.repliconVirus(line).equals("-")){
-	    			File dir = new File("Kingdom/Virus/" + Parse.nomEspece(line));
-	    			dir.mkdir();
-	    		}else System.out.println("Virus : On a trouvé un -");
-	    	}
-	    	*/
+	    	Main.progress(100);
 		} catch (IOException ex) {
 			System.out.println("Erreur URLConnection");
 		}

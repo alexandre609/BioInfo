@@ -15,6 +15,11 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JTextField;
 import javax.swing.JProgressBar;
+import javax.swing.JMenuItem;
+import javax.swing.JCheckBoxMenuItem;
+import java.awt.Button;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 
 public class Fenetre extends JFrame {
@@ -73,6 +78,13 @@ public class Fenetre extends JFrame {
 		panel.add(textField, BorderLayout.CENTER);
 		textField.setColumns(10);
 		
+		Button button = new Button("New button");
+		button.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+			}
+		});
+		panel.add(button, BorderLayout.EAST);
+		
 		JPanel panel_1 = new JPanel();
 		panel_2.add(panel_1, BorderLayout.SOUTH);
 		panel_1.setLayout(new FlowLayout(FlowLayout.RIGHT, 5, 5));
@@ -90,14 +102,32 @@ public class Fenetre extends JFrame {
 		JMenu mnFichier = new JMenu("Fichier");
 		menuBar.add(mnFichier);
 		
+		JMenuItem mntmFermer = new JMenuItem("Fermer");
+		mnFichier.add(mntmFermer);
+		
 		JMenu mnEdition = new JMenu("\u00C9dition");
 		menuBar.add(mnEdition);
 		
-		JMenu mnFentre = new JMenu("Fen\u00EAtre");
-		menuBar.add(mnFentre);
+		JMenu mnAffichage = new JMenu("Affichage");
+		menuBar.add(mnAffichage);
 		
-		JMenu mnAide = new JMenu("Aide");
-		menuBar.add(mnAide);
+		JMenu mnArbre = new JMenu("Arbre");
+		mnAffichage.add(mnArbre);
+		
+		JCheckBoxMenuItem chckbxmntmEukaryotes = new JCheckBoxMenuItem("Eukaryotes");
+		chckbxmntmEukaryotes.setSelected(true);
+		mnArbre.add(chckbxmntmEukaryotes);
+		
+		JCheckBoxMenuItem chckbxmntmProkaryotes = new JCheckBoxMenuItem("Prokaryotes");
+		chckbxmntmProkaryotes.setSelected(true);
+		mnArbre.add(chckbxmntmProkaryotes);
+		
+		JCheckBoxMenuItem chckbxmntmVirus = new JCheckBoxMenuItem("Virus");
+		chckbxmntmVirus.setSelected(true);
+		mnArbre.add(chckbxmntmVirus);
+		
+		JMenu mnOutils = new JMenu("Outils");
+		menuBar.add(mnOutils);
 		
 		JProgressBar progressBar = new JProgressBar();
 		contentPane.add(progressBar, BorderLayout.SOUTH);

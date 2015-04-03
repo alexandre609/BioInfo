@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
 
 /**
  * Cette classe contient toutes les opérations propres à la récupération de données dans la (les) bases de données.
@@ -9,6 +10,9 @@ import java.net.URLConnection;
  *
  */
 public class Recuperation{
+	ArrayList<String[]> liste;
+	String kingdom;
+	
 	/**
 	 * Lance la récupération de réplicons d'après la liste présentée.
 	 * @param liste Liste des réplicons au format brut, récupéré après parsage de la liste d'Eukaryotes, Prokaryotes ou Virus.
@@ -44,32 +48,66 @@ public class Recuperation{
 		return resultat;
 	}
 	
+	public Recuperation(){
+		this.kingdom = "";
+		this.liste = new ArrayList<String[]> ();
+	}
 	
-	public static void test(){
-		BufferedReader reader = null;
-		try{
-			URL url = new URL("http://www.ncbi.nlm.nih.gov/genomes/Genome2BE/genome2srv.cgi?action=download&orgn=&report=proks&status=50|40|30|20|&group=--%20All%20Prokaryotes%20--&subgroup=--%20All%20Prokaryotes%20--");
-			URLConnection urlConnection = url.openConnection();
-			urlConnection.connect();
-            reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
-		    
-		    String line = null;
-		    while ((line = reader.readLine()) != null) {
-		    	File dir = new File("Kingdom/Prokaryotes/" + Parse.nomEspece(line));
-				dir.mkdir();
-		    }
-		} catch (IOException ex) {
-			System.out.println("Erreur URLConnection");
-			//Logger.getLogger(HTTPLoader.class.getName()).log(Level.SEVERE, null, ex);
-			//return "";
-		}/* finally {
-			try {
-				if (reader != null) {
-					reader.close();
-				}
-			} catch (IOException ex) {
-				Logger.getLogger(HTTPLoader.class.getName()).log(Level.SEVERE, null, ex);
+	public Recuperation(String kingdom){
+		this.kingdom = kingdom;
+		this.liste = new ArrayList<String[]> ();
+	}
+	
+	
+	public void chargerInfos(){
+		File fichier = new File("Kingdom/" + kingdom + "/content.csv");
+		if(fichier.exists()){
+			try{
+				BufferedReader br = new BufferedReader(new FileReader(fichier));
+		        String espece;
+	
+		        while ((espece = br.readLine()) != null) {
+		            String[] ligne = espece.split(";");
+		            liste.add(ligne);
+		        }
+		        br.close();
+			}catch(Exception e){
+				System.out.println("Erreur : Recuperation.chargerInfos() : "+ kingdom +" (BufferedReader)");
 			}
-		}*/
-	}	
+		}else try {
+			fichier.createNewFile();
+		}catch(Exception e){
+			System.out.println("Erreur : Recuperation.chargerInfos() : "+ kingdom +" (!fichier.exists())");
+		}
+	}
+	
+	public void afficherInfos(){
+		if(liste.isEmpty())System.out.println("Recuperation.afficherInfos() : " + kingdom + " (liste vide)");
+		for(String[] espece : liste){
+			for(int i=0 ; i<espece.length ; i++)
+				System.out.println("TEST" + espece[i] + " ");
+		}
+	}
+	
+	public void enregistrerInfos(){
+		File fichier = new File("Kingdom/" + kingdom + "/content.csv");
+		
+		try{
+			if(!fichier.exists())
+				fichier.createNewFile();
+			
+			BufferedWriter bw = new BufferedWriter(new FileWriter(fichier));
+			for(String[] espece : liste){
+				for(int i=0; i<espece.length ; i++){
+					bw.write(espece[i]);
+					if(i< (espece.length -1))
+						bw.write(';');
+				}
+				bw.newLine();
+			}
+			bw.close();
+		}catch(Exception e){
+			
+		}
+	}
 }
