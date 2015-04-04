@@ -2,16 +2,18 @@ import java.util.ArrayList;
 
 
 public class Espece {
-	private String nom;
-	private String groupe;
-	private String subgroupe;
+	private String organism;
+	private String kingdom;
+	private String group;
+	private String subgroup;
 	private ArrayList<String> replicons;
 	private String modifyDate;
 	
-	public Espece(String nom, String groupe, String subgroupe, String replicons, String modifyDate){
-		this.nom=nom;
-		this.groupe=groupe;
-		this.subgroupe=subgroupe;
+	public Espece(String nom, String royaume, String groupe, String subgroupe, String replicons, String modifyDate){
+		this.organism=nom;
+		this.kingdom = royaume;
+		this.group=groupe;
+		this.subgroup=subgroupe;
 		this.modifyDate=modifyDate;
 		this.replicons=new ArrayList<String>();
 		
@@ -22,7 +24,10 @@ public class Espece {
 		}
 	}
 	
-	public String getNom(){return nom;}
+	public String getOrganism(){return organism;}
+	public String getKingdom(){return kingdom;}
+	public String getGroup(){return group;}
+	public String getSubGroup(){return subgroup;}
 	public ArrayList<String> getReplicons(){return replicons;}
 	
 	public String afficherReplicons(){

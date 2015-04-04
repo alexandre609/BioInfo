@@ -130,6 +130,7 @@ public class Fenetre extends JFrame {
 		menuBar.add(mnOutils);
 		
 		JProgressBar progressBar = new JProgressBar();
+		progressBar.setStringPainted(true);
 		contentPane.add(progressBar, BorderLayout.SOUTH);
 	}
 

@@ -16,6 +16,9 @@ public class Recuperation{
 	Parse parseur;
 	String kingdom;
 	
+	public String getKingdom(){return kingdom;}
+	public ArrayList<Espece> getEspeces(){return especes;}
+	
 	/**
 	 * Lance la récupération de réplicons d'après la liste présentée.
 	 * @param liste Liste des réplicons au format brut, récupéré après parsage de la liste d'Eukaryotes, Prokaryotes ou Virus.
@@ -83,7 +86,7 @@ public class Recuperation{
 	
 	
 	private void chargerInfos(){
-		File fichier = new File("Kingdom/" + kingdom + "/content.csv");
+		File fichier = new File("Kingdom/" + kingdom + "/content.txt");
 		especes = new ArrayList<Espece>();
 		if(fichier.exists()){
 			try{
@@ -96,6 +99,7 @@ public class Recuperation{
 			            liste.add(ligne);
 			            especes.add(new Espece(
 			            		ligne[parseur.getOrganism()],
+			            		kingdom,
 			            		ligne[parseur.getGroup()],
 			            		ligne[parseur.getSubGroup()],
 			            		ligne[parseur.getReplicons()],
@@ -166,6 +170,12 @@ public class Recuperation{
 	    				dir.mkdir();
 	    			dir = new File("Kingdom/"+ kingdom +"/" + parseur.groupe(line) +"/" + parseur.subgroupe(line) + "/" + parseur.espece(line));
 	    			dir.mkdir();
+	    			dir = new File("Kingdom/"+ kingdom +"/" + parseur.groupe(line) +"/" + parseur.subgroupe(line) + "/" + parseur.espece(line)+"/Genome");
+	    			if(!dir.exists())
+	    				dir.mkdir();
+	    			dir = new File("Kingdom/"+ kingdom +"/" + parseur.groupe(line) +"/" + parseur.subgroupe(line) + "/" + parseur.espece(line)+"/Gene");
+	    			if(!dir.exists())
+	    				dir.mkdir();
 	    			
 	    			//Chopper les id et les lire avec ça :  http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=JPKY01000541.1&rettype=fasta_cds_na&retmode=text
 	    			//										"http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=" + replicons id + "&rettype=fasta_cds_na&retmode=text";
@@ -194,7 +204,7 @@ public class Recuperation{
 	}
 	
 	private void enregistrerInfos(){
-		File fichier = new File("Kingdom/" + kingdom + "/content.csv");
+		File fichier = new File("Kingdom/" + kingdom + "/content.txt");
 		
 		try{
 			if(!fichier.exists())

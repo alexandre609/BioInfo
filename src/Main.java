@@ -5,6 +5,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -31,9 +33,8 @@ public class Main {
 	public static DefaultMutableTreeNode root;
 	public static JTree arborescence;
 	public static JScrollPane scrollPane;
-	public static JCheckBoxMenuItem checkEukaryotes;
-	public static JCheckBoxMenuItem checkProkaryotes;
-	public static JCheckBoxMenuItem checkVirus;
+	public static ArrayList<JCheckBoxMenuItem> checkKingdom;
+	
 	
 	public static void main(String[] args) {
 		initialize();
@@ -50,9 +51,18 @@ public class Main {
 	 */
 	public static void actionsBoutonLancer(){
 		frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-		if(checkEukaryotes.isSelected())	royaumes.get(0).recupFastaLocal();
-		if(checkProkaryotes.isSelected())	royaumes.get(1).recupFastaLocal();
-		if(checkVirus.isSelected())			royaumes.get(2).recupFastaLocal();
+		if(checkKingdom.get(0).isSelected()){
+			//royaumes.get(0).recupFastaLocal();
+			Statistiques stats1 = new Statistiques(royaumes.get(0));
+		}
+		if(checkKingdom.get(1).isSelected()){
+			//royaumes.get(1).recupFastaLocal();
+			Statistiques stats2 = new Statistiques(royaumes.get(1));
+		}
+		if(checkKingdom.get(2).isSelected()){
+			//royaumes.get(2).recupFastaLocal();
+			Statistiques stats3 = new Statistiques(royaumes.get(2));
+		}
 		frame.setCursor(Cursor.getDefaultCursor());
 	}
 	
@@ -60,9 +70,9 @@ public class Main {
 		progressText("Vérification de l'arborescence");
 		frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
-		if(checkEukaryotes.isSelected())	royaumes.get(0).verifierInfos();
-		if(checkProkaryotes.isSelected())	royaumes.get(1).verifierInfos();
-		if(checkVirus.isSelected())			royaumes.get(2).verifierInfos();
+		if(checkKingdom.get(0).isSelected())	royaumes.get(0).verifierInfos();
+		if(checkKingdom.get(1).isSelected())	royaumes.get(1).verifierInfos();
+		if(checkKingdom.get(2).isSelected())	royaumes.get(2).verifierInfos();
 		
 		frame.setCursor(Cursor.getDefaultCursor());
 		refreshArborescence();
@@ -125,18 +135,18 @@ public class Main {
 		JMenu mnAffichage = new JMenu("Affichage");
 		menuBar.add(mnAffichage);	
 	
+		checkKingdom = new ArrayList<JCheckBoxMenuItem>();
+		checkKingdom.add(new JCheckBoxMenuItem("Eukaryotes"));
+		checkKingdom.get(0).setSelected(true);
+		mnArbre.add(checkKingdom.get(0));
 		
-		checkEukaryotes = new JCheckBoxMenuItem("Eukaryotes");
-		checkEukaryotes.setSelected(true);
-		mnArbre.add(checkEukaryotes);
+		checkKingdom.add(new JCheckBoxMenuItem("Prokaryotes"));
+		checkKingdom.get(1).setSelected(true);
+		mnArbre.add(checkKingdom.get(1));
 		
-		checkProkaryotes = new JCheckBoxMenuItem("Prokaryotes");
-		checkProkaryotes.setSelected(true);
-		mnArbre.add(checkProkaryotes);
-		
-		checkVirus = new JCheckBoxMenuItem("Virus");
-		checkVirus.setSelected(true);
-		mnArbre.add(checkVirus);
+		checkKingdom.add(new JCheckBoxMenuItem("Virus"));
+		checkKingdom.get(2).setSelected(true);
+		mnArbre.add(checkKingdom.get(2));
 		
 		JMenu mnOutils = new JMenu("Outils");
 		menuBar.add(mnOutils);
