@@ -2,17 +2,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 
 
-/**
- * Cette classe contient toutes les méthodes d'écriture.
- * <br>La sortie Excel utilise l'API POI de Apache.
- * @author Alexandre Florentin
- *
- */
-public class Sortie {
-	public static void sortieExcel(){
+public class Statistiques {
+	public static void sortieExcel(String titre, String infos){
 		try{
 			Workbook wb = new HSSFWorkbook();
 		    //Workbook wb = new XSSFWorkbook();
@@ -32,7 +30,7 @@ public class Sortie {
 		    row.createCell(3).setCellValue(true);
 
 		    // Write the output to a file
-		    FileOutputStream fileOut = new FileOutputStream("workbook.xls");
+		    FileOutputStream fileOut = new FileOutputStream(titre + ".xls");
 		    wb.write(fileOut);
 		    fileOut.close();
 			wb.close();

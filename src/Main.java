@@ -3,6 +3,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Enumeration;
 
 import javax.imageio.ImageIO;
@@ -21,6 +22,7 @@ import javax.swing.tree.TreePath;
  *
  */
 public class Main {
+	public static ArrayList<Recuperation> royaumes;
 	public static JFrame frame;
 	public static JPanel contentPane;
 	public static JTextField champRecherche;
@@ -29,22 +31,17 @@ public class Main {
 	public static DefaultMutableTreeNode root;
 	public static JTree arborescence;
 	public static JScrollPane scrollPane;
-	public static JCheckBoxMenuItem chckbxmntmEukaryotes;
-	public static JCheckBoxMenuItem chckbxmntmProkaryotes;
-	public static JCheckBoxMenuItem chckbxmntmVirus;
+	public static JCheckBoxMenuItem checkEukaryotes;
+	public static JCheckBoxMenuItem checkProkaryotes;
+	public static JCheckBoxMenuItem checkVirus;
 	
 	public static void main(String[] args) {
-		Recuperation eukaryotes = new Recuperation("Eukaryotes");
-		eukaryotes.chargerInfos();
-		eukaryotes.afficherInfos();
-		Recuperation prokaryotes = new Recuperation("Prokaryotes");
-		prokaryotes.chargerInfos();
-		prokaryotes.afficherInfos();
-		Recuperation virus = new Recuperation("Virus");
-		virus.chargerInfos();
-		virus.afficherInfos();
 		initialize();
-		//Recuperation.test();
+		royaumes = new ArrayList<Recuperation>();
+		royaumes.add(new Recuperation("Eukaryotes"));
+		royaumes.add(new Recuperation("Prokaryotes"));
+		royaumes.add(new Recuperation("Virus"));
+		
 		//Sortie.sortieExcel();
 	}
 
@@ -52,25 +49,32 @@ public class Main {
 	 * Actions effectuées au clic du bouton Lancer
 	 */
 	public static void actionsBoutonLancer(){
-		progress.setIndeterminate(true);
-		progressText.setText("Chargement de l'arborescence");
-		progressText.repaint();
 		frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-		Arborescence.royaumes();
-		Arborescence.recupererArborescence();
+		if(checkEukaryotes.isSelected())	royaumes.get(0).recupFastaLocal();
+		if(checkProkaryotes.isSelected())	royaumes.get(1).recupFastaLocal();
+		if(checkVirus.isSelected())			royaumes.get(2).recupFastaLocal();
+		frame.setCursor(Cursor.getDefaultCursor());
+	}
+	
+	public static void actionsBoutonVerif(){
+		progressText("Vérification de l'arborescence");
+		frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+		if(checkEukaryotes.isSelected())	royaumes.get(0).verifierInfos();
+		if(checkProkaryotes.isSelected())	royaumes.get(1).verifierInfos();
+		if(checkVirus.isSelected())			royaumes.get(2).verifierInfos();
+		
 		frame.setCursor(Cursor.getDefaultCursor());
 		refreshArborescence();
-		progressText.setText("");
-		progressText.repaint();
-		progress.setIndeterminate(false);
 	}
 	
 	/**
 	 * Rafraîchissement de l'arborescence affichée
 	 */
 	static void refreshArborescence(){
-		DefaultMutableTreeNode root = Arborescence.getSubDirs(new File("./Kingdom/"));
+		DefaultMutableTreeNode root = getSubDirs(new File("./Kingdom/"));
 		arborescence = new JTree(root,true);
+		arborescence.setRootVisible(false);
 		scrollPane.setViewportView(arborescence);
 	}
 	
@@ -105,26 +109,34 @@ public class Main {
 		JMenu mnFichier = new JMenu("Fichier");
 		menuBar.add(mnFichier);
 		
+		JMenuItem mntmFermer = new JMenuItem("Fermer");
+		mnFichier.add(mntmFermer);
+		mntmFermer.addActionListener(new ActionListener(){
+				public void actionPerformed(ActionEvent arg0) {
+					System.exit(0);
+				}});
+		
 		JMenu mnEdition = new JMenu("\u00C9dition");
 		menuBar.add(mnEdition);
 		
-		JMenu mnAffichage = new JMenu("Affichage");
-		menuBar.add(mnAffichage);
-		
 		JMenu mnArbre = new JMenu("Arbre");
-		mnAffichage.add(mnArbre);
+		menuBar.add(mnArbre);
 		
-		chckbxmntmEukaryotes = new JCheckBoxMenuItem("Eukaryotes");
-		chckbxmntmEukaryotes.setSelected(true);
-		mnArbre.add(chckbxmntmEukaryotes);
+		JMenu mnAffichage = new JMenu("Affichage");
+		menuBar.add(mnAffichage);	
+	
 		
-		chckbxmntmProkaryotes = new JCheckBoxMenuItem("Prokaryotes");
-		chckbxmntmProkaryotes.setSelected(true);
-		mnArbre.add(chckbxmntmProkaryotes);
+		checkEukaryotes = new JCheckBoxMenuItem("Eukaryotes");
+		checkEukaryotes.setSelected(true);
+		mnArbre.add(checkEukaryotes);
 		
-		chckbxmntmVirus = new JCheckBoxMenuItem("Virus");
-		chckbxmntmVirus.setSelected(true);
-		mnArbre.add(chckbxmntmVirus);
+		checkProkaryotes = new JCheckBoxMenuItem("Prokaryotes");
+		checkProkaryotes.setSelected(true);
+		mnArbre.add(checkProkaryotes);
+		
+		checkVirus = new JCheckBoxMenuItem("Virus");
+		checkVirus.setSelected(true);
+		mnArbre.add(checkVirus);
 		
 		JMenu mnOutils = new JMenu("Outils");
 		menuBar.add(mnOutils);
@@ -138,7 +150,7 @@ public class Main {
 		scrollPane = new JScrollPane();
 		panel_2.add(scrollPane, BorderLayout.CENTER);
 		
-		root = Arborescence.getSubDirs(new File("./Kingdom/"));
+		root = getSubDirs(new File("./Kingdom/"));
 		arborescence = new JTree(root,true);
 		arborescence.setRootVisible(false);
 		scrollPane.setViewportView(arborescence);
@@ -200,7 +212,27 @@ public class Main {
 		btnLancer.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent arg0) {
 				//On va lancer la recherche en ligne
-				actionsBoutonLancer();
+				Runnable runner = new Runnable(){
+			        public void run() {
+			        	actionsBoutonLancer();
+			        }
+			    };
+			    Thread t = new Thread(runner, "Code Executer");
+			    t.start();
+			}});
+		
+		JButton btnVerif = new JButton("Verifier");
+		panel_1.add(btnVerif);
+		btnVerif.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent arg0) {
+				//On va lancer la recherche en ligne
+				Runnable runner = new Runnable(){
+			        public void run() {
+			        	actionsBoutonVerif();
+			        }
+			    };
+			    Thread t = new Thread(runner, "Code Executer");
+			    t.start();
 			}});
 
 		JButton btnQuitter = new JButton("Quitter");
@@ -236,11 +268,27 @@ public class Main {
 		}
 	}
 	
-	public static void progress(int valeur){
-		progress.setValue(valeur);
-	}
+	public static void progress(int valeur){progress.setValue(valeur);}
+	public static void progress(boolean valeur){progress.setIndeterminate(!valeur);}
 	
 	public static void progressText(String texte){
 		progressText.setText(texte);
+		progressText.repaint();
+	}
+	
+	public static DefaultMutableTreeNode getSubDirs(File root){
+		DefaultMutableTreeNode racine = new DefaultMutableTreeNode(root,true);
+		File[] list = root.listFiles();
+		
+		if ( list != null){
+			for (int j = 0 ; j<list.length ; j++){
+				DefaultMutableTreeNode file = null;
+				if (list[j].isDirectory()){
+					file = getSubDirs(list[j]);  
+					racine.add(file);
+				}
+			}
+		}
+		return racine;
 	}
 }

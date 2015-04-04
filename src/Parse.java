@@ -27,89 +27,39 @@ public class Parse {
 	}
 	
 	//Setteurs
-	private void setOrganism(Integer info)		{emplacement[0] = info;}
-	private void setBioProject(Integer info)	{emplacement[1] = info;}
-	private void setGroup(Integer info)			{emplacement[2] = info;}
-	private void setSubGroup(Integer info)		{emplacement[3] = info;}
-	private void setReplicons(Integer info)		{emplacement[4] = info;}
-	private void setModifDate(Integer info)		{emplacement[5] = info;}
+	public void setOrganism(Integer info)		{emplacement[0] = info;}
+	public void setBioProject(Integer info)		{emplacement[1] = info;}
+	public void setGroup(Integer info)			{emplacement[2] = info;}
+	public void setSubGroup(Integer info)		{emplacement[3] = info;}
+	public void setReplicons(Integer info)		{emplacement[4] = info;}
+	public void setModifDate(Integer info)		{emplacement[5] = info;}
 	
 	//Getteurs servant à retrouver l'emplacement
-	private Integer getOrganism(Integer info)		{return emplacement[0];}
-	private Integer getBioProject(Integer info)		{return emplacement[1];}
-	private Integer getGroup(Integer info)			{return emplacement[2];}
-	private Integer getSubGroup(Integer info)		{return emplacement[3];}
-	private Integer getReplicons(Integer info)		{return emplacement[4];}
-	private Integer getModifDate(Integer info)		{return emplacement[5];}
+	public Integer getOrganism()		{return emplacement[0];}
+	public Integer getBioProject()		{return emplacement[1];}
+	public Integer getGroup()			{return emplacement[2];}
+	public Integer getSubGroup()		{return emplacement[3];}
+	public Integer getReplicons()		{return emplacement[4];}
+	public Integer getModifDate()		{return emplacement[5];}
 	
-	public static String nomEspece(String ligne){
-		return ligne.substring(0, ligne.indexOf("\t"));
+	public boolean replicons(String line){
+		if(line.equals("-"))
+			return false;
+		else return true;
 	}
 	
-	public static int nthOccurrence(String str, char c, int n) {
-	    int pos = str.indexOf(c, 0);
-	    while (n-- > 0 && pos != -1)
-	        pos = str.indexOf(c, pos+1);
-	    return pos;
+	public String groupe(String ligne){
+		String[] l = ligne.split("\t");
+		return l[getGroup()];
 	}
 	
-	public static String groupeProkaryote(String ligne){
-		int indexDebut = nthOccurrence(ligne,'\t',1)+1;
-		int indexFin = ligne.indexOf("\t", indexDebut);
-		return ligne.substring(indexDebut, indexFin);
+	public String subgroupe(String ligne){
+		String[] l = ligne.split("\t");
+		return l[getSubGroup()];
 	}
 	
-	public static String subgroupeProkaryote(String ligne){
-		int indexDebut = nthOccurrence(ligne,'\t',2)+1;
-		int indexFin = ligne.indexOf("\t", indexDebut);
-		return ligne.substring(indexDebut, indexFin);
-	}
-	
-	public static String repliconProkaryote(String ligne){
-		int indexDebut = nthOccurrence(ligne,'\t',5)+1;
-		int indexFin = ligne.indexOf("\t", indexDebut);
-		return ligne.substring(indexDebut, indexFin);
-	}
-	
-	public static String groupeEukaryote(String ligne){
-		int indexDebut = nthOccurrence(ligne,'\t',1)+1;
-		int indexFin = ligne.indexOf("\t", indexDebut);
-		return ligne.substring(indexDebut, indexFin);
-	}
-	
-	public static String subgroupeEukaryote(String ligne){
-		int indexDebut = nthOccurrence(ligne,'\t',2)+1;
-		int indexFin = ligne.indexOf("\t", indexDebut);
-		return ligne.substring(indexDebut, indexFin);
-	}
-	
-	public static String repliconEukaryote(String ligne){
-		int indexDebut = nthOccurrence(ligne,'\t',6)+1;
-		int indexFin = ligne.indexOf("\t", indexDebut);
-		return ligne.substring(indexDebut, indexFin);
-	}
-	
-	public static String repliconPlasmid(String ligne){
-		int indexDebut = nthOccurrence(ligne,'\t',7)+1;
-		int indexFin = ligne.indexOf("\t", indexDebut);
-		return ligne.substring(indexDebut, indexFin);
-	}
-	
-	public static String groupeVirus(String ligne){
-		int indexDebut = nthOccurrence(ligne,'\t',1)+1;
-		int indexFin = ligne.indexOf("\t", indexDebut);
-		return ligne.substring(indexDebut, indexFin);
-	}
-	
-	public static String subgroupeVirus(String ligne){
-		int indexDebut = nthOccurrence(ligne,'\t',2)+1;
-		int indexFin = ligne.indexOf("\t", indexDebut);
-		return ligne.substring(indexDebut, indexFin);
-	}
-	
-	public static String repliconVirus(String ligne){
-		int indexDebut = nthOccurrence(ligne,'\t',6)+1;
-		int indexFin = ligne.indexOf("\t", indexDebut);
-		return ligne.substring(indexDebut, indexFin);
+	public String espece(String ligne){
+		String[] l = ligne.split("\t");
+		return l[getOrganism()];
 	}
 }
