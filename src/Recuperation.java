@@ -16,30 +16,27 @@ public class Recuperation{
 	Parse parseur;
 	String kingdom;
 	
+	public static int avancement;
+	
 	public String getKingdom(){return kingdom;}
 	public ArrayList<Espece> getEspeces(){return especes;}
 	
-	/**
-	 * Lance la récupération de réplicons d'après la liste présentée.
-	 * @param liste Liste des réplicons au format brut, récupéré après parsage de la liste d'Eukaryotes, Prokaryotes ou Virus.
-	 */
-	public static void truc(String liste){
-		String[] listeReplicons = liste.substring(liste.indexOf(':')+1, liste.indexOf(';')).split("/");
-		for(String id:listeReplicons){
-			recupFasta(id);
-		}
-	}
-	
 	public void recupFastaLocal(){
-		int taille = especes.size();
-		int actu = 1;
+		double taille = especes.size();
+		double actu = 1.0;
+		int tail = especes.size();
+		int act = 1;
+		Double av=0.0;
+		Main.progress.setStringPainted(true);
 		for(Espece espece : especes){
-			Main.progressText(kingdom + " : " + actu+"/"+taille);
-			Main.progress((actu/taille)*100);
+			av = (actu/taille)*100.0;
+			Main.progressText(kingdom + " : " + act+"/"+tail);
+			Main.progress(av.intValue());
 			for(String id:espece.getReplicons()){
-				recupFasta(id);
+				recupFasta(id, espece);
 			}
 			actu++;
+			act++;
 		}
 	}
 
@@ -48,25 +45,31 @@ public class Recuperation{
 	 * @param id	Identifiant du réplicon à chercher
 	 * @return
 	 */
-	public static String recupFasta(String id){
-		String resultat = "";
+	public static void recupFasta(String id, Espece espece){
 		BufferedReader reader = null;
-		try{
-			URL url = new URL("http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=" + id + "&rettype=fasta_cds_na&retmode=text");
-			
-			URLConnection urlConnection = url.openConnection();
-			urlConnection.connect();
-            reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
-		    
-		    String line = null;
-		    while ((line = reader.readLine()) != null) {
-		    	//resultat += line +"\n";
-		    	//System.out.println(line);
-		    }
-		} catch (IOException ex) {
+		BufferedWriter bw = null;
+		File fichier = new File("Kingdom/"+ espece.getKingdom() +"/" + espece.getGroup() +"/" + espece.getSubGroup() + "/" + espece.getOrganism()+"/Sequences/"+id+".txt");
+		if(!fichier.exists()){
+			try{
+				URL url = new URL("http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=" + id + "&rettype=fasta_cds_na&retmode=text");
+				URLConnection urlConnection = url.openConnection();
+				urlConnection.connect();
+				
+	            reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+	            bw = new BufferedWriter(new FileWriter(fichier,false));
+			    String line = reader.readLine();
+			    bw.write(line);
+			    while ((line = reader.readLine()) != null) {
+			    	bw.newLine();
+			    	bw.write(line);
+			    }
+			    bw.close();
+			} catch (IOException ex) {
 			System.out.println("Erreur URLConnection");
+			}
+		}else{
+			System.out.println("Le fichier existe déjà, inutile de le retélécharger !");
 		}
-		return resultat;
 	}
 	
 	public Recuperation(){
@@ -174,6 +177,9 @@ public class Recuperation{
 	    			if(!dir.exists())
 	    				dir.mkdir();
 	    			dir = new File("Kingdom/"+ kingdom +"/" + parseur.groupe(line) +"/" + parseur.subgroupe(line) + "/" + parseur.espece(line)+"/Gene");
+	    			if(!dir.exists())
+	    				dir.mkdir();
+	    			dir = new File("Kingdom/"+ kingdom +"/" + parseur.groupe(line) +"/" + parseur.subgroupe(line) + "/" + parseur.espece(line)+"/Sequences");
 	    			if(!dir.exists())
 	    				dir.mkdir();
 	    			

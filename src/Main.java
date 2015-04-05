@@ -52,16 +52,16 @@ public class Main {
 	public static void actionsBoutonLancer(){
 		frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 		if(checkKingdom.get(0).isSelected()){
-			//royaumes.get(0).recupFastaLocal();
-			Statistiques stats1 = new Statistiques(royaumes.get(0));
+			royaumes.get(0).recupFastaLocal();
+			//Statistiques stats1 = new Statistiques(royaumes.get(0));
 		}
 		if(checkKingdom.get(1).isSelected()){
-			//royaumes.get(1).recupFastaLocal();
-			Statistiques stats2 = new Statistiques(royaumes.get(1));
+			royaumes.get(1).recupFastaLocal();
+			//Statistiques stats2 = new Statistiques(royaumes.get(1));
 		}
 		if(checkKingdom.get(2).isSelected()){
-			//royaumes.get(2).recupFastaLocal();
-			Statistiques stats3 = new Statistiques(royaumes.get(2));
+			royaumes.get(2).recupFastaLocal();
+			//Statistiques stats3 = new Statistiques(royaumes.get(2));
 		}
 		frame.setCursor(Cursor.getDefaultCursor());
 	}
