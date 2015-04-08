@@ -26,6 +26,8 @@ import javax.swing.tree.TreePath;
 public class Main {
 	public static ArrayList<Recuperation> royaumes;
 	public static JFrame frame;
+	public static JButton btnVerif;
+	public static JButton btnLancer;
 	public static JPanel contentPane;
 	public static JTextField champRecherche;
 	public static JProgressBar progress;
@@ -42,14 +44,14 @@ public class Main {
 		royaumes.add(new Recuperation("Eukaryotes"));
 		royaumes.add(new Recuperation("Prokaryotes"));
 		royaumes.add(new Recuperation("Virus"));
-		
-		//Sortie.sortieExcel();
 	}
 
 	/**
 	 * Actions effectuées au clic du bouton Lancer
 	 */
 	public static void actionsBoutonLancer(){
+		btnLancer.setEnabled(false);
+		btnVerif.setEnabled(false);
 		frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 		if(checkKingdom.get(0).isSelected()){
 			royaumes.get(0).recupFastaLocal();
@@ -64,9 +66,14 @@ public class Main {
 			//Statistiques stats3 = new Statistiques(royaumes.get(2));
 		}
 		frame.setCursor(Cursor.getDefaultCursor());
+		btnVerif.setEnabled(true);
+		btnLancer.setEnabled(true);
+		
 	}
 	
 	public static void actionsBoutonVerif(){
+		btnLancer.setEnabled(false);
+		btnVerif.setEnabled(false);
 		progressText("Vérification de l'arborescence");
 		frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
@@ -75,6 +82,8 @@ public class Main {
 		if(checkKingdom.get(2).isSelected())	royaumes.get(2).verifierInfos();
 		
 		frame.setCursor(Cursor.getDefaultCursor());
+		btnVerif.setEnabled(true);
+		btnLancer.setEnabled(true);
 		refreshArborescence();
 	}
 	
@@ -217,7 +226,7 @@ public class Main {
 		progressText = new JLabel("");
 		panel_1.add(progressText);
 		
-		JButton btnLancer = new JButton("Lancer");
+		btnLancer = new JButton("Lancer");
 		panel_1.add(btnLancer);
 		btnLancer.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent arg0) {
@@ -231,7 +240,7 @@ public class Main {
 			    t.start();
 			}});
 		
-		JButton btnVerif = new JButton("Verifier");
+		btnVerif = new JButton("Verifier");
 		panel_1.add(btnVerif);
 		btnVerif.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent arg0) {
