@@ -2,8 +2,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.Arrays;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
@@ -16,37 +15,69 @@ import org.apache.poi.ss.usermodel.Workbook;
 
 
 public class Statistiques {
-	static double avancement;
-	final static String[] trinucleotides = {"AAA","AAC","AAG","AAT","ACA","ACC","ACG","ACT","AGA","AGC","AGG","AGT","ATA","ATC","ATG","ATT",
-		"CAA","CAC","CAG","CAT","CCA","CCC","CCG","CCT","CGA","CGC","CGG","CGT","CTA","CTC","CTG","CTT",
-		"GAA","GAC","GAG","GAT","GCA","GCC","GCG","GCT","GGA","GGC","GGG","GGT","GTA","GTC","GTG","GTT",
-		"TAA","TAC","TAG","TAT","TCA","TCC","TCG","TCT","TGA","TGC","TGG","TGT","TTA","TTC","TTG","TTT"};
-	Recuperation royaume;
+	String header;
+	/**
+	 * Compte le nombre de CDS rencontrés au total
+	 */
+	int nbCds;
 	
-	public Statistiques(Recuperation royaume){
-		final ExecutorService service = Executors.newFixedThreadPool(100);
-		this.royaume = royaume;
+	/**
+	 * Compte le nombre de CDS erronés et donc skippés
+	 */
+	int nbErrCds;
+	int nbTrinu;
+	static double avancement;
+	
+	ArrayList<Trinucl> trinucleotide;
+	static ArrayList<String> trinucleotides;
+	//Recuperation royaume;
+	Espece espece;
+	
+	public Statistiques(Espece espece){//Recuperation royaume){
+		initialiserTrinucl();
+		String[] tri = {"AAA","AAC","AAG","AAT","ACA","ACC","ACG","ACT","AGA","AGC","AGG","AGT","ATA","ATC","ATG","ATT",
+				"CAA","CAC","CAG","CAT","CCA","CCC","CCG","CCT","CGA","CGC","CGG","CGT","CTA","CTC","CTG","CTT",
+				"GAA","GAC","GAG","GAT","GCA","GCC","GCG","GCT","GGA","GGC","GGG","GGT","GTA","GTC","GTG","GTT",
+				"TAA","TAC","TAG","TAT","TCA","TCC","TCG","TCT","TGA","TGC","TGG","TGT","TTA","TTC","TTG","TTT"};
+		trinucleotides = new ArrayList<String>(Arrays.asList(tri));
+		//final ExecutorService service = Executors.newFixedThreadPool(100);
+		//this.royaume = royaume;
+		this.espece = espece;
+		this.nbCds = 0;
+		this.nbTrinu = 0;
+		this.nbErrCds = 0;
 		Main.progress.setStringPainted(true);
-		Main.progressText(this.royaume.getKingdom() +" : Génération de fichiers Excel");
-		
-		avancement=1;
-		double max = this.royaume.getEspeces().size();
-		for(Espece espece : this.royaume.getEspeces()){
-			service.execute(new Runnable(){
-				@Override
-				public void run() {
-					// TODO Auto-generated method stub
-					sortieExcel(espece,"");
-					Double prog = (avancement/max)*100.0;
-					Main.progress(prog.intValue());
-					avancement++;
-				}
-			});
-		}
-		Main.progressText(this.royaume.getKingdom() +" : Tâche terminée");
+		Main.progressText("Calcul des statistiques de : " + espece.getOrganism());
 	}
 	
-	private void calculer(Workbook wb, Sheet sheet, String infos){
+	public void erreur(){nbErrCds++;}
+	
+	public void setHeader(String header){
+		this.header = header;
+	}
+	
+	/**
+	 * Compte les trinucléotides d'une séquence donnée.
+	 * <br>On lira pour les trois phases.
+	 * @param sequence La séquence à analyser
+	 */
+	public boolean analyser(String sequence){
+		int i=0;
+		while(i < (sequence.length() -3)){
+			int index = trinucleotides.indexOf(sequence.substring(i, i+3));
+			if(index == -1){
+				System.err.println("Mauvais trinucléotide : "+sequence.substring(i, i+3));
+				return false;
+			}else
+				trinucleotide.get(index).phase[i%3] += 1;
+			i++;
+			nbTrinu++;
+		}
+		nbCds++;
+		return true;
+	}
+	
+	private void calculer(Workbook wb, Sheet sheet){
 		Row row;
 		Cell cell;
 		CellStyle style = wb.createCellStyle();
@@ -58,22 +89,27 @@ public class Statistiques {
 		styleDec.setAlignment(CellStyle.ALIGN_CENTER);
 		short ligne = 7;
 		//Pour chaque Trinucléotide
-		for(String tri : trinucleotides){
+		for(Trinucl t : trinucleotide){
 			row = sheet.createRow(ligne);
 			
 	    	cell = row.createCell(0);
-	    	cell.setCellValue(tri);
+	    	cell.setCellValue(t.getNom());
 	    	cell.setCellStyle(style);
 			
 			//Pour chaque phase
 			for(int i=0;i<3;i++){
+				//On écrit le résultat du comptage
 				cell = row.createCell((2*i)+1);
-				cell.setCellValue(0);
+				cell.setCellValue(t.getPhase(i));
 				cell.setCellStyle(styleNat);
-				cell = row.createCell((2*i)+2);
-				cell.setCellValue(0.000000001);
-				cell.setCellStyle(styleDec);
 				
+				//On écrit la formule qui va bien pour chaque phase
+				cell = row.createCell((2*i)+2);
+				cell.setCellType(Cell.CELL_TYPE_FORMULA);
+			    if(i==0)cell.setCellFormula("(B"+ (ligne + 1) +"/B72)*100");
+			    else if(i==1)cell.setCellFormula("(D"+ (ligne + 1) +"/D72)*100");
+			    else if(i==2)cell.setCellFormula("(F"+ (ligne + 1) +"/F72)*100");
+				cell.setCellStyle(styleDec);
 			}
 			ligne++;
 		}
@@ -108,7 +144,7 @@ public class Statistiques {
 	    cell.setCellFormula("SUM(G8:G71)");
 	}
 	
-	private void sortieExcel(Espece espece, String infos){
+	public void sortieExcel(){
 		try{
 			Workbook wb = new HSSFWorkbook();
 		    //Workbook wb = new XSSFWorkbook();
@@ -137,19 +173,19 @@ public class Statistiques {
 		    row = sheet.createRow((short)2);
 		    row.createCell(0).setCellValue("Nb CDS");
 		    Cell cell = row.createCell(1);
-		    cell.setCellValue(0);	//Compter les CDS des fichiers texte (ou le nombre de fichier texte ?)
+		    cell.setCellValue(nbCds);	//Compter les CDS des fichiers texte (ou le nombre de fichier texte ?)
 		    cell.setCellStyle(style);
 		    
 		    row = sheet.createRow((short)3);
 		    row.createCell(0).setCellValue("Nb trinucléoitides");
 		    cell = row.createCell(1);
-		    cell.setCellValue(0);	//Compter les trinucléotides des fichiers texte
+		    cell.setCellValue(nbTrinu/3);	//Compter les trinucléotides des fichiers texte
 		    cell.setCellStyle(style);
 		    
 		    row = sheet.createRow((short)4);
 		    row.createCell(0).setCellValue("Nb CDS non traités");
 		    cell = row.createCell(1);
-		    cell.setCellValue(0);	//Compter les CDS des fichiers texte pas pris en compte
+		    cell.setCellValue(nbErrCds);	//Compter les CDS des fichiers texte pas pris en compte
 		    cell.setCellStyle(style);
 		    
 		    
@@ -178,18 +214,53 @@ public class Statistiques {
 		    
 
 
-		    calculer(wb, sheet, infos);
+		    calculer(wb, sheet);
 		    for(int i=0;i<7;i++)
 		    	sheet.autoSizeColumn(i);
 		    
 		    // Write the output to a file
-		    File fichier = new File("Kingdom/" + espece.getKingdom() + "/"+ espece.getGroup() +"/" + espece.getSubGroup() + "/" + espece.getOrganism()+"/"+espece.getOrganism() + ".xls");
+		    String output = "Kingdom/" + espece.getKingdom() + "/"+ espece.getGroup() +"/" + espece.getSubGroup() + "/" + espece.getOrganism()+"/";
+		    File fichier = new File(output +espece.getOrganism() + ".xls");
 		    FileOutputStream fileOut = new FileOutputStream(fichier);
 		    wb.write(fileOut);
 		    fileOut.close();
 			wb.close();
+			
+			fichier = new File(output+"log.txt");
+			fichier.createNewFile();
+			
+			Main.progressText(output +" : Fichier créé");
+			System.out.println(output +" : Fichier créé");
 		}catch (IOException io){
 			System.out.println("IOException");
 		}
 	}
+	
+	void initialiserTrinucl(){
+		trinucleotide = new ArrayList<>();
+		char nuc[] = {'A','C','G','T'};
+		for(char n1 : nuc){
+			for(char n2 : nuc){
+				for(char n3 : nuc){
+					trinucleotide.add(new Trinucl( String.valueOf(n1) + String.valueOf(n2) + String.valueOf(n3)));
+				}
+			}
+		}
+	}
+}
+
+class Trinucl{
+	private String nom;
+	public int phase[];
+
+	public Trinucl(String nom){
+		this.nom = nom;
+		this.phase = new int[3];
+		
+		//On initialise les phases à 0
+		for(int i=0; i<3 ; this.phase[i]=0, i++);
+	}
+	
+	public int getPhase(int i){return phase[i];}
+	public String getNom(){return this.nom;}
 }

@@ -23,6 +23,8 @@ public class Parse {
 				setReplicons(i);
 			else if(place[i].equalsIgnoreCase("Modify Date"))
 				setModifDate(i);
+			else if(place[i].equalsIgnoreCase("Downloaded"))
+				setEstTelecharge(i);
 		}
 	}
 	
@@ -33,6 +35,7 @@ public class Parse {
 	public void setSubGroup(Integer info)		{emplacement[3] = info;}
 	public void setReplicons(Integer info)		{emplacement[4] = info;}
 	public void setModifDate(Integer info)		{emplacement[5] = info;}
+	public void setEstTelecharge(Integer info)	{emplacement[9] = info;}
 	
 	//Getteurs servant à retrouver l'emplacement
 	public Integer getOrganism()		{return emplacement[0];}
@@ -41,11 +44,17 @@ public class Parse {
 	public Integer getSubGroup()		{return emplacement[3];}
 	public Integer getReplicons()		{return emplacement[4];}
 	public Integer getModifDate()		{return emplacement[5];}
+	public Integer getEstTelecharge()	{return emplacement[9];}
 	
 	public boolean replicons(String line){
 		if(line.equals("-"))
 			return false;
 		else return true;
+	}
+	
+	public String modifDate(String ligne){
+		String[] l = ligne.split("\t");
+		return l[getModifDate()];
 	}
 	
 	public String groupe(String ligne){

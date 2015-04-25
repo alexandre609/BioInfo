@@ -1,12 +1,13 @@
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -14,6 +15,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreePath;
 
 /**
@@ -24,6 +26,7 @@ import javax.swing.tree.TreePath;
  *
  */
 public class Main {
+	static String source = "";
 	public static ArrayList<Recuperation> royaumes;
 	public static JFrame frame;
 	public static JButton btnVerif;
@@ -35,8 +38,9 @@ public class Main {
 	public static DefaultMutableTreeNode root;
 	public static JTree arborescence;
 	public static JScrollPane scrollPane;
+	public static JPopupMenu menuContextuel;
 	public static ArrayList<JCheckBoxMenuItem> checkKingdom;
-	
+	public static JCheckBoxMenuItem sauvegarder;
 	
 	public static void main(String[] args) {
 		initialize();
@@ -45,7 +49,18 @@ public class Main {
 		royaumes.add(new Recuperation("Prokaryotes"));
 		royaumes.add(new Recuperation("Virus"));
 	}
-
+	
+	public static void ouvrirDossier(){
+		if(arborescence.getLastSelectedPathComponent() != null){
+			File dir = new File(arborescence.getLastSelectedPathComponent().toString());
+			try{
+				Desktop.getDesktop().open(dir);
+			}catch(Exception ex){
+				System.out.println("ça marche pas");
+			}
+		}
+	}
+	
 	/**
 	 * Actions effectuées au clic du bouton Lancer
 	 */
@@ -54,21 +69,19 @@ public class Main {
 		btnVerif.setEnabled(false);
 		frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 		if(checkKingdom.get(0).isSelected()){
-			royaumes.get(0).recupFastaLocal();
-			//Statistiques stats1 = new Statistiques(royaumes.get(0));
+			royaumes.get(0).recupFastaLocal(sauvegarder.isSelected());
 		}
 		if(checkKingdom.get(1).isSelected()){
-			royaumes.get(1).recupFastaLocal();
-			//Statistiques stats2 = new Statistiques(royaumes.get(1));
+			royaumes.get(1).recupFastaLocal(sauvegarder.isSelected());
 		}
 		if(checkKingdom.get(2).isSelected()){
-			royaumes.get(2).recupFastaLocal();
-			//Statistiques stats3 = new Statistiques(royaumes.get(2));
+			royaumes.get(2).recupFastaLocal(sauvegarder.isSelected());
 		}
 		frame.setCursor(Cursor.getDefaultCursor());
 		btnVerif.setEnabled(true);
 		btnLancer.setEnabled(true);
-		
+		refreshArborescence();
+		progressText("Statistiques terminées !");
 	}
 	
 	public static void actionsBoutonVerif(){
@@ -77,23 +90,47 @@ public class Main {
 		progressText("Vérification de l'arborescence");
 		frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
-		if(checkKingdom.get(0).isSelected())	royaumes.get(0).verifierInfos();
-		if(checkKingdom.get(1).isSelected())	royaumes.get(1).verifierInfos();
-		if(checkKingdom.get(2).isSelected())	royaumes.get(2).verifierInfos();
+		int modifications=0;
+		if(checkKingdom.get(0).isSelected())	modifications += royaumes.get(0).verifierInfos();
+		if(checkKingdom.get(1).isSelected())	modifications += royaumes.get(1).verifierInfos();
+		if(checkKingdom.get(2).isSelected())	modifications += royaumes.get(2).verifierInfos();
 		
 		frame.setCursor(Cursor.getDefaultCursor());
 		btnVerif.setEnabled(true);
 		btnLancer.setEnabled(true);
 		refreshArborescence();
+		Main.progressText("Vérification effectuée. "+modifications+" modifications trouvées");
+		Main.progress(100);
 	}
 	
 	/**
 	 * Rafraîchissement de l'arborescence affichée
 	 */
 	static void refreshArborescence(){
-		DefaultMutableTreeNode root = getSubDirs(new File("./Kingdom/"));
+		root = getSubDirs(new File("./Kingdom/"));
 		arborescence = new JTree(root,true);
 		arborescence.setRootVisible(false);
+		arborescence.addMouseListener(new MouseListener(){
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				if(e.getButton() == MouseEvent.BUTTON1){
+					if(e.getClickCount() == 2)
+						ouvrirDossier();
+				}
+			}
+			@Override
+			public void mouseEntered(MouseEvent e) {
+			}
+			@Override
+			public void mouseExited(MouseEvent e) {
+			}
+			@Override
+			public void mousePressed(MouseEvent e) {
+			}
+			@Override
+			public void mouseReleased(MouseEvent e) {
+			}
+		});
 		scrollPane.setViewportView(arborescence);
 	}
 	
@@ -120,6 +157,10 @@ public class Main {
 		contentPane.setLayout(new BorderLayout(0, 0));
 		frame.setContentPane(contentPane);
 		
+		
+		menuContextuel = new JPopupMenu();
+		JMenuItem menuItem = new JMenuItem("ACTION 1" );
+		menuContextuel.add(menuItem);
 		
 		//DEBUT BARRE DU HAUT
 		JMenuBar menuBar = new JMenuBar();
@@ -156,6 +197,10 @@ public class Main {
 		checkKingdom.add(new JCheckBoxMenuItem("Virus"));
 		checkKingdom.get(2).setSelected(true);
 		mnArbre.add(checkKingdom.get(2));
+	
+		sauvegarder = new JCheckBoxMenuItem("Sauvegarder les séquences");
+		sauvegarder.setSelected(false);
+		mnArbre.add(sauvegarder);
 		
 		JMenu mnOutils = new JMenu("Outils");
 		menuBar.add(mnOutils);
@@ -169,10 +214,7 @@ public class Main {
 		scrollPane = new JScrollPane();
 		panel_2.add(scrollPane, BorderLayout.CENTER);
 		
-		root = getSubDirs(new File("./Kingdom/"));
-		arborescence = new JTree(root,true);
-		arborescence.setRootVisible(false);
-		scrollPane.setViewportView(arborescence);
+		refreshArborescence();
 		
 		JPanel panel = new JPanel();
 		panel_2.add(panel, BorderLayout.NORTH);
@@ -298,16 +340,32 @@ public class Main {
 	public static DefaultMutableTreeNode getSubDirs(File root){
 		DefaultMutableTreeNode racine = new DefaultMutableTreeNode(root,true);
 		File[] list = root.listFiles();
-		
-		if ( list != null){
+		boolean hasLog=false;
+		if(list!= null){
 			for (int j = 0 ; j<list.length ; j++){
 				DefaultMutableTreeNode file = null;
 				if (list[j].isDirectory()){
 					file = getSubDirs(list[j]);  
 					racine.add(file);
+				}else if(list[j].isFile()){
+					if(list[j].getName().equals("log.txt"))
+						hasLog = true;
+					else if(list[j].getName().equals("content.txt")){
+						//Skip
+					}else{
+						file = new DefaultMutableTreeNode(list[j]);
+						file.setAllowsChildren(false);
+						racine.add(file);
+					}
 				}
+			}
+		}
+		if(!racine.isLeaf()){
+			if(racine.getFirstChild().isLeaf() && !hasLog){
+			racine.remove(0);
 			}
 		}
 		return racine;
 	}
 }
+

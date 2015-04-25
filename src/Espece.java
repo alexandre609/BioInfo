@@ -1,6 +1,5 @@
 import java.util.ArrayList;
 
-
 public class Espece {
 	private String organism;
 	private String kingdom;
@@ -23,11 +22,13 @@ public class Espece {
 			
 		}
 	}
+	public void setModifyDate(String nouv){this.modifyDate=nouv;}
 	
 	public String getOrganism(){return organism;}
 	public String getKingdom(){return kingdom;}
 	public String getGroup(){return group;}
 	public String getSubGroup(){return subgroup;}
+	public String getModifyDate(){return modifyDate;}
 	public ArrayList<String> getReplicons(){return replicons;}
 	
 	public String afficherReplicons(){
