@@ -1,5 +1,5 @@
 /**
- * Cette classe sert à filtrer le texte de différentes manières.
+ * Cette classe sert Ã  filtrer le texte de diffÃ©rentes maniÃ¨res.
  * @author Alexandre Florentin
  *
  */
@@ -37,7 +37,7 @@ public class Parse {
 	public void setModifDate(Integer info)		{emplacement[5] = info;}
 	public void setEstTelecharge(Integer info)	{emplacement[9] = info;}
 	
-	//Getteurs servant à retrouver l'emplacement
+	//Getteurs servant Ã  retrouver l'emplacement
 	public Integer getOrganism()		{return emplacement[0];}
 	public Integer getBioProject()		{return emplacement[1];}
 	public Integer getGroup()			{return emplacement[2];}
