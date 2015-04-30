@@ -1,8 +1,11 @@
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
@@ -16,38 +19,52 @@ import org.apache.poi.ss.usermodel.Workbook;
 
 public class Statistiques {
 	String header;
+	String outputSpecific;
 	/**
-	 * Compte le nombre de CDS rencontr�s au total
+	 * Compte le nombre de CDS rencontrés au total
 	 */
 	int nbCds;
 	
 	/**
-	 * Compte le nombre de CDS erron�s et donc skipp�s
+	 * Compte le nombre de CDS erronés et donc skippés
 	 */
 	int nbErrCds;
 	int nbTrinu;
 	static double avancement;
-	
+
+	String[] init = {"ATG","CTG","TTG","GTG","ATA","ATC","ATT","TTA"};
+	String[] stop = {"TAA","TAG","TGA"};
+	String[] tri = {"AAA","AAC","AAG","AAT","ACA","ACC","ACG","ACT","AGA","AGC","AGG","AGT","ATA","ATC","ATG","ATT",
+			"CAA","CAC","CAG","CAT","CCA","CCC","CCG","CCT","CGA","CGC","CGG","CGT","CTA","CTC","CTG","CTT",
+			"GAA","GAC","GAG","GAT","GCA","GCC","GCG","GCT","GGA","GGC","GGG","GGT","GTA","GTC","GTG","GTT",
+			"TAA","TAC","TAG","TAT","TCA","TCC","TCG","TCT","TGA","TGC","TGG","TGT","TTA","TTC","TTG","TTT"};
 	ArrayList<Trinucl> trinucleotide;
 	static ArrayList<String> trinucleotides;
-	//Recuperation royaume;
 	Espece espece;
 	
-	public Statistiques(Espece espece){//Recuperation royaume){
+	public Statistiques(Espece espece){
 		initialiserTrinucl();
-		String[] tri = {"AAA","AAC","AAG","AAT","ACA","ACC","ACG","ACT","AGA","AGC","AGG","AGT","ATA","ATC","ATG","ATT",
-				"CAA","CAC","CAG","CAT","CCA","CCC","CCG","CCT","CGA","CGC","CGG","CGT","CTA","CTC","CTG","CTT",
-				"GAA","GAC","GAG","GAT","GCA","GCC","GCG","GCT","GGA","GGC","GGG","GGT","GTA","GTC","GTG","GTT",
-				"TAA","TAC","TAG","TAT","TCA","TCC","TCG","TCT","TGA","TGC","TGG","TGT","TTA","TTC","TTG","TTT"};
+		
 		trinucleotides = new ArrayList<String>(Arrays.asList(tri));
-		//final ExecutorService service = Executors.newFixedThreadPool(100);
-		//this.royaume = royaume;
 		this.espece = espece;
 		this.nbCds = 0;
 		this.nbTrinu = 0;
 		this.nbErrCds = 0;
+		this.outputSpecific = "";
 		Main.progress.setStringPainted(true);
-		Main.progressText("Calcul des statistiques de : " + espece.getOrganism());
+		Main.progressText(espece.getOrganism());
+	}
+	
+	public Statistiques(){
+		initialiserTrinucl();
+		
+		trinucleotides = new ArrayList<String>(Arrays.asList(tri));
+		this.espece = null;
+		this.nbCds = 0;
+		this.nbTrinu = 0;
+		this.nbErrCds = 0;
+		Main.progress.setStringPainted(true);
+		Main.progressText("Combinaison des statistiques");
 	}
 	
 	public void erreur(){nbErrCds++;}
@@ -57,25 +74,85 @@ public class Statistiques {
 	}
 	
 	/**
-	 * Compte les trinucl�otides d'une s�quence donn�e.
+	 * Vérifie si la séquence donnée commence bien par un codon init et termine par un codon stop.
+	 * @param sequence La séquence à vérifier.
+	 * @return <b>true</b> si les codons init et stop sont bons, <b>false</b> sinon.
+	 */
+	public boolean codonsConformes(String sequence){
+		if((sequence == null) || (sequence.length() < 3))
+			return false;
+		
+		String codonInit = sequence.substring(0, 3);
+		String codonStop = sequence.substring(sequence.length()-3, sequence.length());
+		ArrayList<String> listeCodonsInit = new ArrayList<String>(Arrays.asList(init));
+		ArrayList<String> listeCodonsStop = new ArrayList<String>(Arrays.asList(stop));
+		
+		if(listeCodonsInit.contains(codonInit)){
+			if(listeCodonsStop.contains(codonStop))
+				return true;
+			else
+				System.err.println("Codon stop erroné : "+ codonStop);
+		}else System.err.println("Codon init erroné : "+ codonInit);
+			
+		return false;
+	}
+	
+	/**
+	 * Compte les trinucléotides d'une séquence donnée.
 	 * <br>On lira pour les trois phases.
-	 * @param sequence La s�quence � analyser
+	 * @param sequence La séquence à analyser
 	 */
 	public boolean analyser(String sequence){
+		//Si le codon init et le codon stop ne sont pas conformes, on ne fait rien du tout
+		if(!codonsConformes(sequence))
+			return false;
+		
+		//Tableau "buffer", au cas où on lit une erreur
+		ArrayList<Trinucl> trinucleotideBuffer = new ArrayList<Trinucl>();
+		int nbTrinuBuffer = 0;
+		char nuc[] = {'A','C','G','T'};
+		for(char n1 : nuc){
+			for(char n2 : nuc){
+				for(char n3 : nuc){
+					trinucleotideBuffer.add(new Trinucl( String.valueOf(n1) + String.valueOf(n2) + String.valueOf(n3)));
+				}
+			}
+		}
+		
+		//Lecture de la séquence en buffer
 		int i=0;
-		while(i < (sequence.length() -3)){
+		int compteTrinu[] = new int[3];for(int c=0;c<3; compteTrinu[c++]=0);
+		while(i< (sequence.length() -3)){
 			int index = trinucleotides.indexOf(sequence.substring(i, i+3));
 			if(index == -1){
-				System.err.println("Mauvais trinucl�otide : "+sequence.substring(i, i+3));
+				System.err.println("Mauvais trinucléotide : "+sequence.substring(i, i+3));
+				nbErrCds++;
 				return false;
-			}else
-				trinucleotide.get(index).phase[i%3] += 1;
+			}else{
+				trinucleotideBuffer.get(index).phase[i%3] += 1;
+				compteTrinu[i%3]++;
+				nbTrinuBuffer++;
+			}
 			i++;
-			nbTrinu++;
 		}
+		//Vérification de la somme des trinucléotides pour chaque phase.
+		if((compteTrinu[0] != compteTrinu[1]) || (compteTrinu[1] != compteTrinu[2])){
+			System.err.println("Pas le même nombre de trinucléotide sur chaque phase.");
+			return false;
+		}
+		
+		//Si la lecture n'a pas fait d'erreur, on garde les données
+		for(i=0;i<64;i++){
+			trinucleotide.get(i).phase[0] += trinucleotideBuffer.get(i).phase[0];
+			trinucleotide.get(i).phase[1] += trinucleotideBuffer.get(i).phase[1];
+			trinucleotide.get(i).phase[2] += trinucleotideBuffer.get(i).phase[2];
+		}
+		
+		nbTrinu += nbTrinuBuffer;
 		nbCds++;
 		return true;
 	}
+	
 	
 	private void calculer(Workbook wb, Sheet sheet){
 		Row row;
@@ -88,7 +165,7 @@ public class Statistiques {
 		styleDec.setDataFormat(wb.createDataFormat().getFormat("0.00"));
 		styleDec.setAlignment(CellStyle.ALIGN_CENTER);
 		short ligne = 7;
-		//Pour chaque Trinucl�otide
+		//Pour chaque Trinucléotide
 		for(Trinucl t : trinucleotide){
 			row = sheet.createRow(ligne);
 			
@@ -98,12 +175,12 @@ public class Statistiques {
 			
 			//Pour chaque phase
 			for(int i=0;i<3;i++){
-				//On �crit le r�sultat du comptage
+				//On écrit le résultat du comptage
 				cell = row.createCell((2*i)+1);
 				cell.setCellValue(t.getPhase(i));
 				cell.setCellStyle(styleNat);
 				
-				//On �crit la formule qui va bien pour chaque phase
+				//On écrit la formule qui va bien pour chaque phase
 				cell = row.createCell((2*i)+2);
 				cell.setCellType(Cell.CELL_TYPE_FORMULA);
 			    if(i==0)cell.setCellFormula("(B"+ (ligne + 1) +"/B72)*100");
@@ -147,7 +224,6 @@ public class Statistiques {
 	public void sortieExcel(){
 		try{
 			Workbook wb = new HSSFWorkbook();
-		    //Workbook wb = new XSSFWorkbook();
 		    CreationHelper createHelper = wb.getCreationHelper();
 		    Sheet sheet = wb.createSheet("new sheet");
 		    CellStyle style = wb.createCellStyle();
@@ -155,20 +231,19 @@ public class Statistiques {
 
 		    // Create a row and put some cells in it. Rows are 0 based.
 		    Row row = sheet.createRow((short)0);
-		    // Create a cell and put a value in it.
-		    
-		    //cell.setCellValue("Nom");
 
 		    // Or do it on one line.
 		    row.createCell(0).setCellValue("Nom");
-		    row.createCell(1).setCellValue(espece.getOrganism());
-		    
-		    row = sheet.createRow((short)1);
-		    row.createCell(0).setCellValue("Chemin");
-		    row.createCell(1).setCellValue(espece.getKingdom());
-		    row.createCell(2).setCellValue(espece.getGroup());
-		    row.createCell(3).setCellValue(espece.getSubGroup());
-		    row.createCell(4).setCellValue(espece.getOrganism());
+		    if(espece != null){
+			    row.createCell(1).setCellValue(espece.getOrganism());
+			    
+			    row = sheet.createRow((short)1);
+			    row.createCell(0).setCellValue("Chemin");
+			    row.createCell(1).setCellValue(espece.getKingdom());
+			    row.createCell(2).setCellValue(espece.getGroup());
+			    row.createCell(3).setCellValue(espece.getSubGroup());
+			    row.createCell(4).setCellValue(espece.getOrganism());
+		    }
 		    
 		    row = sheet.createRow((short)2);
 		    row.createCell(0).setCellValue("Nb CDS");
@@ -177,13 +252,13 @@ public class Statistiques {
 		    cell.setCellStyle(style);
 		    
 		    row = sheet.createRow((short)3);
-		    row.createCell(0).setCellValue("Nb trinucl�oitides");
+		    row.createCell(0).setCellValue("Nb trinucléoitides");
 		    cell = row.createCell(1);
-		    cell.setCellValue(nbTrinu/3);	//Compter les trinucl�otides des fichiers texte
+		    cell.setCellValue(nbTrinu/3);	//Compter les trinucléotides des fichiers texte
 		    cell.setCellStyle(style);
 		    
 		    row = sheet.createRow((short)4);
-		    row.createCell(0).setCellValue("Nb CDS non trait�s");
+		    row.createCell(0).setCellValue("Nb CDS non traités");
 		    cell = row.createCell(1);
 		    cell.setCellValue(nbErrCds);	//Compter les CDS des fichiers texte pas pris en compte
 		    cell.setCellStyle(style);
@@ -191,7 +266,7 @@ public class Statistiques {
 		    
 		    row = sheet.createRow((short)6);
 		    cell = row.createCell(0);
-		    cell.setCellValue("Trinucl�otides");
+		    cell.setCellValue("Trinucléotides");
 		    cell.setCellStyle(style);
 		    cell = row.createCell(1);
 		    cell.setCellValue("Nb Ph0");
@@ -212,37 +287,162 @@ public class Statistiques {
 		    cell.setCellValue("Pb Ph2");
 		    cell.setCellStyle(style);
 		    
-
-
 		    calculer(wb, sheet);
 		    for(int i=0;i<7;i++)
 		    	sheet.autoSizeColumn(i);
 		    
-		    // Write the output to a file
-		    String output = "Kingdom/" + espece.getKingdom() + "/"+ espece.getGroup() +"/" + espece.getSubGroup() + "/" + espece.getOrganism()+"/";
-		    File fichier = new File(output +espece.getOrganism() + ".xls");
+		    File fichier;
+		    
+		    //Si c'est une espèce, on écrit dans le sous-dossier
+		    if(outputSpecific == ""){
+		    	outputSpecific = "Kingdom/" + espece.getKingdom() + "/"+ espece.getGroup() +"/" + espece.getSubGroup() + "/" + espece.getOrganism()+"/";
+		    	fichier = new File(outputSpecific);
+		    	if(!fichier.exists())
+			    	fichier.mkdir();
+			    fichier = new File(outputSpecific +espece.getBioproject() + ".xls");
+		    }
+		    //Sinon on écrit dans le dossier
+		    else{
+			    fichier = new File(outputSpecific + ".xls");
+		    }
+		    
 		    FileOutputStream fileOut = new FileOutputStream(fichier);
 		    wb.write(fileOut);
 		    fileOut.close();
 			wb.close();
 			
-			fichier = new File(output+"log.txt");
-			fichier.createNewFile();
-			
-			Main.progressText(output +" : Fichier cr��");
-			System.out.println(output +" : Fichier cr��");
+			if(outputSpecific != null){
+				Main.progressText(outputSpecific +" : Fichier créé");
+				System.out.println(outputSpecific +" : Fichier créé");
+			}
 		}catch (IOException io){
-			System.out.println("IOException");
+			io.printStackTrace();
 		}
 	}
 	
 	void initialiserTrinucl(){
-		trinucleotide = new ArrayList<>();
+		trinucleotide = new ArrayList<Trinucl>();
 		char nuc[] = {'A','C','G','T'};
 		for(char n1 : nuc){
 			for(char n2 : nuc){
 				for(char n3 : nuc){
 					trinucleotide.add(new Trinucl( String.valueOf(n1) + String.valueOf(n2) + String.valueOf(n3)));
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Disons que dossier est un royaume
+	 * @param dossier
+	 */
+	public static void hierarchicalStats(File dossier, boolean fine){
+		//Si c'est bien un dossier et qu'il n'est pas vide
+		if(dossier.isDirectory() && dossier.listFiles() != null){
+			//On prend tous les groupes pour faire l'opération
+			if(Main.multiThread()){
+				final boolean f = fine;
+				final File d = dossier;
+				final File[] sousDossier = dossier.listFiles();
+				ExecutorService execute = Executors.newFixedThreadPool(10);
+				execute.execute(new Runnable(){
+					@Override
+					public void run(){
+						for(File fichier : sousDossier){
+							hierarchicalStats(fichier, f);
+						}
+						Statistiques stats = new Statistiques();
+						stats.combinerStats(d, f);
+						stats.sortieExcel();
+					}
+				});
+			}
+			else{
+				for(File fichier : dossier.listFiles()){
+					hierarchicalStats(fichier, fine);
+				}
+				Statistiques stats = new Statistiques();
+				stats.combinerStats(dossier, fine);
+				stats.sortieExcel();
+			}
+		}
+	}
+	
+	/**
+	 * Combine les statistiques trouvées dans les fichiers Excel du dossier mentionné.
+	 * <br>Ces statistiques sont additionnées et gardées dans l'objet Statistiques courant.
+	 * @param dossier Dossier dans lequel figurent les fichiers dont on veut récupérer les données.
+	 */
+	public void combinerStats(File dossier, boolean fine){
+		if((dossier != null) && (dossier.isDirectory()) && (dossier.listFiles() != null)){
+			for(File fichier : dossier.listFiles()){
+				if(fichier.getName().endsWith(".xls")){
+					try{
+						FileInputStream file = new FileInputStream(fichier);
+						 
+						Workbook workbook = new HSSFWorkbook(file);
+						Sheet sheet = workbook.getSheetAt(0);
+						Cell cell = null;
+						
+						//On lit les cellules trinucléotides
+						for(int i=7 ; i<71; i++){
+							for(int j=0;j<3;j++){
+								cell = sheet.getRow(i).getCell(1+(j*2));											
+								trinucleotide.get(i-7).phase[j] += cell.getNumericCellValue();
+							}
+						}
+						//On lit nbCds
+						cell = sheet.getRow(2).getCell(1);
+						nbCds += cell.getNumericCellValue();
+						
+						//On lit nbTrinu
+						cell = sheet.getRow(3).getCell(1);
+						nbErrCds += cell.getNumericCellValue();
+						
+						//On lit nbErrCds
+						cell = sheet.getRow(4).getCell(1);
+						nbTrinu += cell.getNumericCellValue();
+						
+						if(this.espece == null){
+							String kingdom = "";
+							String group = "";
+							String subGroup = "";
+							String organism = "";
+							
+							cell = sheet.getRow(1).getCell(1);
+							if(cell.getCellType() == Cell.CELL_TYPE_STRING){
+								kingdom = cell.getStringCellValue();
+							}
+							cell = sheet.getRow(1).getCell(2);
+							if(cell.getCellType() == Cell.CELL_TYPE_STRING){
+								group = cell.getStringCellValue();
+							}
+							cell = sheet.getRow(1).getCell(3);
+							if(cell.getCellType() == Cell.CELL_TYPE_STRING){
+								subGroup = cell.getStringCellValue();
+							}
+							cell = sheet.getRow(1).getCell(4);
+							if(cell.getCellType() == Cell.CELL_TYPE_STRING){
+								organism = cell.getStringCellValue();
+							}
+							
+							this.espece = new Espece(organism, kingdom, group, subGroup, organism);
+							this.outputSpecific = dossier.getPath();
+							System.out.println(outputSpecific);
+						}
+							
+						workbook.close();
+						file.close();
+						
+						//Si on fait des statistiques grossières
+						if(!fine){
+							//Si le fichier est un dossier vide ou un 
+							if(fichier.listFiles() == null)
+								break;
+						}
+					}catch(IOException e){
+						e.printStackTrace();
+					}
 				}
 			}
 		}
@@ -257,7 +457,7 @@ class Trinucl{
 		this.nom = nom;
 		this.phase = new int[3];
 		
-		//On initialise les phases � 0
+		//On initialise les phases à 0
 		for(int i=0; i<3 ; this.phase[i]=0, i++);
 	}
 	
