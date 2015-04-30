@@ -5,16 +5,26 @@ public class Espece {
 	private String kingdom;
 	private String group;
 	private String subgroup;
+	private String bioproject;
 	private ArrayList<String> replicons;
 	private String modifyDate;
 	
-	public Espece(String nom, String royaume, String groupe, String subgroupe, String replicons, String modifyDate){
-		this.organism=nom;
-		this.kingdom = royaume;
-		this.group=groupe;
-		this.subgroup=subgroupe;
+	public Espece(String nom, String royaume, String groupe, String subgroupe, String bioproject){
+		this.organism=nom.replaceAll("/", "");
+		this.kingdom = royaume.replaceAll("/", "");
+		this.group=groupe.replaceAll("/", "");
+		this.subgroup=subgroupe.replaceAll("/", "");
+		this.bioproject = bioproject.replaceAll("/", "");
+	}
+	
+	public Espece(String nom, String royaume, String groupe, String subgroupe, String replicons, String bioproject, String modifyDate){
+		this.organism=nom.replaceAll("/", "");
+		this.kingdom = royaume.replaceAll("/", "");
+		this.group=groupe.replaceAll("/", "");
+		this.subgroup=subgroupe.replaceAll("/", "");
 		this.modifyDate=modifyDate;
 		this.replicons=new ArrayList<String>();
+		this.bioproject = bioproject.replaceAll("/", "");
 		
 		for(String typeRep : replicons.split(";")){
 			for(String replicon :typeRep.substring(typeRep.indexOf(':')+1).split("/"))
@@ -24,6 +34,7 @@ public class Espece {
 	}
 	public void setModifyDate(String nouv){this.modifyDate=nouv;}
 	
+	public String getBioproject(){return bioproject;}
 	public String getOrganism(){return organism;}
 	public String getKingdom(){return kingdom;}
 	public String getGroup(){return group;}
