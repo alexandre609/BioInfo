@@ -2,20 +2,22 @@ import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 /**
- * Cette classe contient toutes les opérations propres à la récupération de données dans la (les) bases de données.
+ * Cette classe contient toutes les opÃ©rations propres Ã  la rÃ©cupÃ©ration de donnÃ©es dans la (les) bases de donnÃ©es.
  * <br>Elles utilisent principalement le service web.
  * @author Alexandre Florentin
  */
 public class Recuperation{
 	/**
-	 * Stocke la liste des espèces récupérée localement
+	 * Stocke la liste des espÃ¨ces rÃ©cupÃ©rÃ©e localement
 	 */
 	ArrayList<String[]> liste;
 	/**
-	 * Stocke la liste des espèces récupérée en ligne
+	 * Stocke la liste des espÃ¨ces rÃ©cupÃ©rÃ©e en ligne
 	 */
 	ArrayList<String[]> recupere;
 	ArrayList<Espece> especes;
@@ -27,10 +29,11 @@ public class Recuperation{
 	public ArrayList<Espece> getEspeces(){return especes;}
 	
 	/**
-	 * Récupère les données avec FastaCDS.
-	 * @param sauvegarder Booléen précisant si l'on veut également enregistrer les séquences traîtées
+	 * RÃ©cupÃ¨re les donnÃ©es avec FastaCDS.
+	 * @param sauvegarder BoolÃ©en prÃ©cisant si l'on veut Ã©galement enregistrer les sÃ©quences traÃ®tÃ©es
 	 */
-	public void recupFastaLocal(boolean sauvegarder){
+	public void recupFastaLocal(){
+		final boolean save = Main.sauvegarder();
 		double taille = especes.size();
 		double actu = 1.0;
 		int tail = especes.size();
@@ -41,21 +44,38 @@ public class Recuperation{
 			av = (actu/taille)*100.0;
 			Main.progressText(kingdom + " : " + act+"/"+tail);
 			Main.progress(av.intValue());
-			File log = new File("Kingdom/" + espece.getKingdom() + "/"+ espece.getGroup() +"/" + espece.getSubGroup() + "/" + espece.getOrganism()+"/log.txt");
-			if(!log.exists()){
-				Statistiques stats = new Statistiques(espece);
-				for(String id:espece.getReplicons()){
-					recupFasta(id, espece,sauvegarder,stats);
+			
+			File log = new File("Kingdom/" + espece.getKingdom() + "/"+ espece.getGroup() +"/" + espece.getSubGroup() + "/" + espece.getOrganism());
+			boolean existe = false;
+			if(log.listFiles() != null){
+				for(File f : log.listFiles()){
+					if(f.getName().equals(espece.getBioproject()+".xls"));
+						existe = true;
 				}
-				stats.sortieExcel();
-				try{
-					log.createNewFile();
-				}catch(IOException e){
-					String liste="";
+			}
+			
+			if(!existe){
+				if(Main.multiThread()){
+					//Un thread par espÃ¨ce
+					ExecutorService execute = Executors.newFixedThreadPool(10);
+					final Espece esp = espece;
+					execute.execute(new Runnable(){
+						@Override
+						public void run(){
+							Statistiques stats = new Statistiques(esp);
+							for(String id:esp.getReplicons()){
+								recupFasta(id, esp,save,stats);
+							}
+							stats.sortieExcel();
+						}
+					});
+				}else{
+					//Mono-thread
+					Statistiques stats = new Statistiques(espece);
 					for(String id:espece.getReplicons()){
-						liste+=", "+id;
+						recupFasta(id, espece,save,stats);
 					}
-					System.err.println("Attention, le fichier log de "+ espece.getOrganism()+" d'identifiants "+ liste.substring(2) +" n'a pas été généré !");
+					stats.sortieExcel();
 				}
 			}
 			actu++;
@@ -64,10 +84,10 @@ public class Recuperation{
 	}
 
 	/**
-	 * Récupère la liste du réplicon désigné par la méthode FASTA_CDS.
-	 * </br>Si on précise sauvegarder = false, alors on ne fait que les statistiques, si on précise sauvegarder = true, on sauvegarde en plus le fichier récupéré.
-	 * @param id	Identifiant du réplicon à chercher
-	 * @param sauvegarder Précise si on veut sauvegarder la séquence sur le disque dur.
+	 * RÃ©cupÃ¨re la liste du rÃ©plicon dÃ©signÃ© par la mÃ©thode FASTA_CDS.
+	 * </br>Si on prÃ©cise sauvegarder = false, alors on ne fait que les statistiques, si on prÃ©cise sauvegarder = true, on sauvegarde en plus le fichier rÃ©cupÃ©rÃ©.
+	 * @param id	Identifiant du rÃ©plicon Ã  chercher
+	 * @param sauvegarder PrÃ©cise si on veut sauvegarder la sÃ©quence sur le disque dur.
 	 * @return
 	 */
 	private static void recupFasta(String id, Espece espece, boolean sauvegarder, Statistiques stats){
@@ -95,38 +115,40 @@ public class Recuperation{
             	bw = new BufferedWriter(new FileWriter(fichier,false));
             
             boolean continuer = true;
-		    while (((ligne = reader.readLine()) != null)&&continuer) {
+		    while ((ligne = reader.readLine()) != null) {
 		    	//Dans tous les cas, si on veut sauvegarder, on sauvegarde direct
 		    	if(sauvegarder){
 			    	bw.newLine();
 			    	bw.write(ligne);
 		    	}
-		    	//Ensuite on fait les traitements à la volée
+		    	//Ensuite on fait les traitements Ã  la volÃ©e
 		    	if(ligne.startsWith(">")){
-		    		//On vérifie le header
+		    		//On vÃ©rifie le header
 		    		if(verifierHeader(ligne)){
-		    			//S'il est bon, on prépare la suite
+		    			//S'il est bon, on prÃ©pare la suite
 						if(sequence.equals("")){
-							//Toute première ligne
+							//Toute premiÃ¨re ligne
 						}else{
-							//Nouveau header, donc on traite la séquence trouvée.
-							//System.out.println(header+"\n"+sequence);
-							stats.analyser(sequence);
+							//Nouveau header, donc on traite la sÃ©quence trouvÃ©e.
+							if(continuer)//Si le header est bon
+								stats.analyser(sequence);
 							sequence = "";
+							continuer = true;
 						}
 						stats.setHeader(ligne);
 						header=ligne;
 		    		}else{
-		    			//S'il est mauvais, on arrête tout
+		    			//S'il est mauvais, on arrÃªte tout
 		    			stats.erreur();
 		    			continuer = false;
 		    		}
 				}else if(ligne.equals("")){
-					//EOF, donc on traite la séquence trouvée
-					stats.analyser(sequence);
-					//System.out.println(header+"\n"+sequence);
+					//EOF, donc on traite la sÃ©quence trouvÃ©e
+					if(continuer)//Si elle est bonne
+						stats.analyser(sequence);
+					continuer = true;
 				}else{
-					//On concatène, si c'est juste une nouvelle ligne
+					//On concatÃ¨ne, si c'est juste une nouvelle ligne
 					sequence += ligne;
 				}
 		    }
@@ -138,6 +160,7 @@ public class Recuperation{
 	}
 	
 	public static boolean verifierHeader(String header){
+		
 		return true;
 	}
 	
@@ -175,6 +198,7 @@ public class Recuperation{
 			            		ligne[parseur.getGroup()],
 			            		ligne[parseur.getSubGroup()],
 			            		ligne[parseur.getReplicons()],
+			            		ligne[parseur.getBioProject()],
 			            		ligne[parseur.getModifDate()]));
 			        }
 		        }
@@ -212,12 +236,12 @@ public class Recuperation{
 			urlConnection.connect();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
 			
-			//Première ligne = titre des colonnes
+			//PremiÃ¨re ligne = titre des colonnes
 			String line = reader.readLine();
 			recupere.add(line.split("\t"));
 			Parse parseur = new Parse(line);
 			
-			Main.progressText("Vérification de : "+kingdom);
+			Main.progressText("VÃ©rification de : "+kingdom);
 			Main.progress(true);
 			
 			boolean modifTrouvee = false;
@@ -230,16 +254,19 @@ public class Recuperation{
 	    			recupere.add(l);
 	    			String dateNouv = parseur.modifDate(line);
 	    			String especeNouv = parseur.espece(line);
-	    			//On cherche l'espèce correspondant
+	    			//On cherche l'espÃ¨ce correspondant
 	    			for(Espece espece:especes){
 	    				if(especeNouv.equals(espece.getOrganism())){
 	    					if(!dateNouv.equals(espece.getModifyDate())){
 	    						recupere.get(recupere.size()-1)[parseur.getModifDate()] = dateNouv;
 	    						System.out.println(espece.getOrganism()+": On remplace : "+espece.getModifyDate()+" par "+dateNouv+ " et "+recupere.get(recupere.size()-1)[parseur.getModifDate()]);
 	    						espece.setModifyDate(dateNouv);
-	    						File log = new File("Kingdom/" + espece.getKingdom() + "/"+ espece.getGroup() +"/" + espece.getSubGroup() + "/" + espece.getOrganism()+"/log.txt");
-	    						if(log.exists())
-	    							log.delete();
+	    						File log = new File("Kingdom/" + espece.getKingdom() + "/"+ espece.getGroup() +"/" + espece.getSubGroup() + "/" + espece.getOrganism());
+	    						if(log.listFiles() != null){
+		    						for(File f: log.listFiles())
+		    							if(f.getName().endsWith(".xls"))
+		    								f.delete();
+	    						}
 	    						modifTrouvee = true;
 	    						nombreModifs++;
 	    					}
@@ -247,9 +274,9 @@ public class Recuperation{
 	    					break;
 	    				}
 	    			}
-	    			//Si on l'a pas trouvée, on la crée
+	    			//Si on l'a pas trouvÃ©e, on la crÃ©e
 	    			if(!trouve){
-	    				System.out.println("Nouvelle espèce : "+parseur.espece(line));
+	    				System.out.println("Nouvelle espÃ¨ce : "+parseur.espece(line));
 	    				nombreModifs++;
 	    				modifTrouvee = true;
 		    			File dir = new File("Kingdom/"+ kingdom +"/" + parseur.groupe(line));
@@ -260,17 +287,6 @@ public class Recuperation{
 		    				dir.mkdir();
 		    			dir = new File("Kingdom/"+ kingdom +"/" + parseur.groupe(line) +"/" + parseur.subgroupe(line) + "/" + parseur.espece(line));
 		    			dir.mkdir();
-		    			/*
-		    			dir = new File("Kingdom/"+ kingdom +"/" + parseur.groupe(line) +"/" + parseur.subgroupe(line) + "/" + parseur.espece(line)+"/Genome");
-		    			if(!dir.exists())
-		    				dir.mkdir();
-		    			dir = new File("Kingdom/"+ kingdom +"/" + parseur.groupe(line) +"/" + parseur.subgroupe(line) + "/" + parseur.espece(line)+"/Gene");
-		    			if(!dir.exists())
-		    				dir.mkdir();
-		    			dir = new File("Kingdom/"+ kingdom +"/" + parseur.groupe(line) +"/" + parseur.subgroupe(line) + "/" + parseur.espece(line)+"/Sequences");
-		    			if(!dir.exists())
-		    				dir.mkdir();
-		    			*/
 	    			}
 	    		}
 	    	}
@@ -286,7 +302,7 @@ public class Recuperation{
 	}
 	
 	/**
-	 * Crée l'arborescence avec la liste des espèce existantes
+	 * CrÃ©e l'arborescence avec la liste des espÃ¨ce existantes
 	 * @return
 	 */
 	public boolean initialiserInfos(){
@@ -319,7 +335,7 @@ public class Recuperation{
 			urlConnection.connect();
 			reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
 			
-			//Première ligne = titre des colonnes
+			//PremiÃ¨re ligne = titre des colonnes
 			String line = reader.readLine();
 			recupere.add(line.split("\t"));
 			Parse parseur = new Parse(line);
@@ -341,20 +357,6 @@ public class Recuperation{
 	    				dir.mkdir();
 	    			dir = new File("Kingdom/"+ kingdom +"/" + parseur.groupe(line) +"/" + parseur.subgroupe(line) + "/" + parseur.espece(line));
 	    			dir.mkdir();
-	    			/*
-	    			dir = new File("Kingdom/"+ kingdom +"/" + parseur.groupe(line) +"/" + parseur.subgroupe(line) + "/" + parseur.espece(line)+"/Genome");
-	    			if(!dir.exists())
-	    				dir.mkdir();
-	    			dir = new File("Kingdom/"+ kingdom +"/" + parseur.groupe(line) +"/" + parseur.subgroupe(line) + "/" + parseur.espece(line)+"/Gene");
-	    			if(!dir.exists())
-	    				dir.mkdir();
-	    			dir = new File("Kingdom/"+ kingdom +"/" + parseur.groupe(line) +"/" + parseur.subgroupe(line) + "/" + parseur.espece(line)+"/Sequences");
-	    			if(!dir.exists())
-	    				dir.mkdir();
-	    			*/
-	    			
-	    			//Chopper les id et les lire avec ça :  http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=JPKY01000541.1&rettype=fasta_cds_na&retmode=text
-	    			//										"http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=" + replicons id + "&rettype=fasta_cds_na&retmode=text";
 	    		}
 	    	}
 	    	Main.progress(99);
