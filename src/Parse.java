@@ -23,6 +23,8 @@ public class Parse {
 				setReplicons(i);
 			else if(place[i].equalsIgnoreCase("Modify Date"))
 				setModifDate(i);
+			else if(place[i].equalsIgnoreCase("Release Date"))
+				setReleaseDate(i);
 			else if(place[i].equalsIgnoreCase("Downloaded"))
 				setEstTelecharge(i);
 		}
@@ -35,6 +37,7 @@ public class Parse {
 	public void setSubGroup(Integer info)		{emplacement[3] = info;}
 	public void setReplicons(Integer info)		{emplacement[4] = info;}
 	public void setModifDate(Integer info)		{emplacement[5] = info;}
+	public void setReleaseDate(Integer info)	{emplacement[6] = info;}
 	public void setEstTelecharge(Integer info)	{emplacement[9] = info;}
 	
 	//Getteurs servant à retrouver l'emplacement
@@ -44,12 +47,18 @@ public class Parse {
 	public Integer getSubGroup()		{return emplacement[3];}
 	public Integer getReplicons()		{return emplacement[4];}
 	public Integer getModifDate()		{return emplacement[5];}
+	public Integer getReleaseDate()		{return emplacement[6];}
 	public Integer getEstTelecharge()	{return emplacement[9];}
 	
 	public boolean replicons(String line){
 		if(line.equals("-"))
 			return false;
 		else return true;
+	}
+	
+	public String releaseDate(String ligne){
+		String[] l = ligne.split("\t");
+		return l[getReleaseDate()];
 	}
 	
 	public String modifDate(String ligne){
@@ -71,4 +80,10 @@ public class Parse {
 		String[] l = ligne.split("\t");
 		return l[getOrganism()];
 	}
+	
+	public String bioproject(String ligne){
+		String[] l = ligne.split("\t");
+		return l[getBioProject()];
+	}
+	
 }

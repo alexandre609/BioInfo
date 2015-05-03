@@ -87,6 +87,7 @@ public class Main {
 	public static void actionsBoutonLancer(){
 		btnVerif.setEnabled(false);
 		frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+		
 		if(checkKingdom.get(0).isSelected()){
 			if(radio0.isSelected())
 				royaumes.get(0).recupFastaLocal();
@@ -147,7 +148,7 @@ public class Main {
 		btnVerif.setEnabled(true);
 		btnLancer.setEnabled(true);
 		refreshArborescence();
-		Main.progressText("Votre arborescence est à jour.");//+modifications+" modifications trouvées");
+		Main.progressText("Votre arborescence est à jour: "  +modifications+" modifications trouvées");
 		Main.progress(100);
 	}
 	

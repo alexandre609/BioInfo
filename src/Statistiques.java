@@ -221,11 +221,11 @@ public class Statistiques {
 	    cell.setCellFormula("SUM(G8:G71)");
 	}
 	
-	public void sortieExcel(){
+	public boolean sortieExcel(){
 		try{
 			Workbook wb = new HSSFWorkbook();
 		    CreationHelper createHelper = wb.getCreationHelper();
-		    Sheet sheet = wb.createSheet("new sheet");
+		    Sheet sheet = wb.createSheet("Statistiques");
 		    CellStyle style = wb.createCellStyle();
 	    	style.setAlignment(CellStyle.ALIGN_CENTER);
 
@@ -303,7 +303,11 @@ public class Statistiques {
 		    }
 		    //Sinon on écrit dans le dossier
 		    else{
-			    fichier = new File(outputSpecific + ".xls");
+		    	if(outputSpecific == null){
+		    		wb.close();
+		    		return false;
+		    	}else
+		    		fichier = new File(outputSpecific + ".xls");
 		    }
 		    
 		    FileOutputStream fileOut = new FileOutputStream(fichier);
@@ -318,6 +322,7 @@ public class Statistiques {
 		}catch (IOException io){
 			io.printStackTrace();
 		}
+		return true;
 	}
 	
 	void initialiserTrinucl(){
@@ -401,7 +406,7 @@ public class Statistiques {
 						
 						//On lit nbErrCds
 						cell = sheet.getRow(4).getCell(1);
-						nbTrinu += cell.getNumericCellValue();
+						nbTrinu += (cell.getNumericCellValue() * 3);
 						
 						if(this.espece == null){
 							String kingdom = "";
@@ -409,22 +414,12 @@ public class Statistiques {
 							String subGroup = "";
 							String organism = "";
 							
-							cell = sheet.getRow(1).getCell(1);
-							if(cell.getCellType() == Cell.CELL_TYPE_STRING){
-								kingdom = cell.getStringCellValue();
-							}
-							cell = sheet.getRow(1).getCell(2);
-							if(cell.getCellType() == Cell.CELL_TYPE_STRING){
-								group = cell.getStringCellValue();
-							}
-							cell = sheet.getRow(1).getCell(3);
-							if(cell.getCellType() == Cell.CELL_TYPE_STRING){
-								subGroup = cell.getStringCellValue();
-							}
-							cell = sheet.getRow(1).getCell(4);
-							if(cell.getCellType() == Cell.CELL_TYPE_STRING){
-								organism = cell.getStringCellValue();
-							}
+							String[] pathString = dossier.getPath().split("/");
+							if(pathString.length > 2) kingdom = pathString[2];
+							if(pathString.length > 3) group = pathString[3];
+							if(pathString.length > 4) subGroup = pathString[4];
+							if(pathString.length > 5) organism = pathString[5];
+							
 							
 							this.espece = new Espece(organism, kingdom, group, subGroup, organism);
 							this.outputSpecific = dossier.getPath();

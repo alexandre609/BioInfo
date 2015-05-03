@@ -199,6 +199,7 @@ public class Recuperation{
 			            		ligne[parseur.getSubGroup()],
 			            		ligne[parseur.getReplicons()],
 			            		ligne[parseur.getBioProject()],
+			            		ligne[parseur.getReleaseDate()],
 			            		ligne[parseur.getModifDate()]));
 			        }
 		        }
@@ -252,14 +253,16 @@ public class Recuperation{
 	    		boolean trouve=false;
 	    		if(!l[parseur.getReplicons()].equals("-")){
 	    			recupere.add(l);
+	    			String creaNouv = parseur.releaseDate(line);
 	    			String dateNouv = parseur.modifDate(line);
 	    			String especeNouv = parseur.espece(line);
+	    			String bioProjNouv = parseur.bioproject(line);
 	    			//On cherche l'espèce correspondant
 	    			for(Espece espece:especes){
-	    				if(especeNouv.equals(espece.getOrganism())){
+	    				if(especeNouv.equals(espece.getOrganism()) && bioProjNouv.equals(espece.getBioproject())&& creaNouv.equals(espece.getReleaseDate())){
 	    					if(!dateNouv.equals(espece.getModifyDate())){
 	    						recupere.get(recupere.size()-1)[parseur.getModifDate()] = dateNouv;
-	    						System.out.println(espece.getOrganism()+": On remplace : "+espece.getModifyDate()+" par "+dateNouv+ " et "+recupere.get(recupere.size()-1)[parseur.getModifDate()]);
+	    						System.out.println(espece.getOrganism()+": On remplace : "+espece.getModifyDate()+" par "+dateNouv);
 	    						espece.setModifyDate(dateNouv);
 	    						File log = new File("Kingdom/" + espece.getKingdom() + "/"+ espece.getGroup() +"/" + espece.getSubGroup() + "/" + espece.getOrganism());
 	    						if(log.listFiles() != null){
