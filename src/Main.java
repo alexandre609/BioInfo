@@ -22,7 +22,6 @@ import javax.swing.tree.TreePath;
  * <br>Il n'est donc pas étonnant d'y retrouver de nombreux éléments servant uniquement à l'interface graphique.
  * <br>J'essaie néanmoins de regrouper tout l'aspect graphique vers le bas du fichier autant que possible.
  * @author Alexandre Florentin
- *
  */
 public class Main {
 	public static JRadioButton radio0;
