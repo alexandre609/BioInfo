@@ -8,10 +8,15 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -24,6 +29,8 @@ import javax.swing.tree.TreePath;
  * @author Alexandre Florentin
  */
 public class Main {
+	public static Integer avancement = 0;
+	public static Integer avancementMax = 100;
 	public static JRadioButton radio0;
 	public static JRadioButton radio1;
 	public static JRadioButton radio2;
@@ -41,11 +48,26 @@ public class Main {
 	public static JTree arborescence;
 	public static JScrollPane scrollPane;
 	public static JPopupMenu menuContextuel;
-	public static ArrayList<JCheckBoxMenuItem> checkKingdom;
-	public static JCheckBoxMenuItem sauvegarder;
-	public static JCheckBoxMenuItem checkThread;
+	public static ArrayList<StayOpenCBItem> checkKingdom;
+	public static StayOpenCBItem sauvegarder;
+	public static StayOpenCBItem checkThread;
+	public static ExecutorService service;
+	public static Main m;
+	private static String OS;
+	
+	public Main(){
+	}
+	
+	public static String detectOs(){
+		String OS = System.getProperty("os.name").toLowerCase();
+		if(OS.indexOf("win") >= 0) return "Windows";
+		else if(OS.indexOf("mac") >= 0) return "Mac";
+		else return "Linux";
+	}
 	
 	public static void main(String[] args) {
+		OS = detectOs();
+		m=new Main();
 		initialize();
 		royaumes = new ArrayList<Recuperation>(3);
 		royaumes.add(new Recuperation("Eukaryotes"));
@@ -55,11 +77,13 @@ public class Main {
 	
 	public static void ouvrirDossier(){
 		if(arborescence.getLastSelectedPathComponent() != null){
-			File dir = new File(arborescence.getLastSelectedPathComponent().toString());
+			String path = arborescence.getLastSelectedPathComponent().toString();
+			if(OS.equals("Windows"))path.replaceAll("/", "\\");
+			File dir = new File(path);
 			try{
 				if(dir.isDirectory()){
-					if(new File(arborescence.getLastSelectedPathComponent().toString() + ".xls").exists())
-						Desktop.getDesktop().open(new File(arborescence.getLastSelectedPathComponent().toString() + ".xls"));
+					if(new File(path + ".xls").exists())
+						Desktop.getDesktop().open(new File(path + ".xls"));
 					else if(dir.getName().equals("Kingdom")){
 						Desktop.getDesktop().open(dir);
 					}
@@ -73,12 +97,98 @@ public class Main {
 		}
 	}
 	
+	
 	public static boolean sauvegarder(){
 		return sauvegarder.getState();
 	}
 	
+	/**
+	 * Indique si on a coché "Multithread" dans l'UI
+	 * @return <b>true</b> si Multithread est coché, <b>false</b> sinon.
+	 */
 	public static boolean multiThread(){
 		return checkThread.getState();
+	}
+	
+	/**
+	 * Lance le programme de façon séquentielle
+	 */
+	public static void runThreaded(){
+		service.execute(new Runnable(){
+			@Override
+			public void run(){
+				if(checkKingdom.get(0).isSelected()){
+					if(radio0.isSelected())
+						royaumes.get(0).recupFastaLocal();
+					else
+						Statistiques.hierarchicalStats(new File("./Kingdom/Eukaryotes"),radio2.isSelected(), Main.multiThread());
+				}
+			}
+		});
+		service.execute(new Runnable(){
+			@Override
+			public void run(){
+				if(checkKingdom.get(1).isSelected()){
+					if(radio0.isSelected())
+						royaumes.get(1).recupFastaLocal();
+					else
+						Statistiques.hierarchicalStats(new File("./Kingdom/Prokaryotes"),radio2.isSelected(), Main.multiThread());
+				}
+			}
+		});
+		
+		service.execute(new Runnable(){
+			@Override
+			public void run(){
+				if(checkKingdom.get(2).isSelected()){
+					if(radio0.isSelected())
+						royaumes.get(2).recupFastaLocal();
+					else
+						Statistiques.hierarchicalStats(new File("./Kingdom/Virus"),radio2.isSelected(), Main.multiThread());
+				}
+			}
+		});
+		
+		service.shutdown();
+		try {
+			service.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+		}catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static void runMono(){
+		if(checkKingdom.get(0).isSelected()){
+			if(radio0.isSelected())
+				royaumes.get(0).recupFastaLocal();
+			else{
+				avancement = 0;
+				avancementMax = 2212;
+				//Statistiques.hierarchicalStats(new File("./Kingdom/Eukaryotes"),radio2.isSelected(), Main.multiThread());
+				Statistiques.hierarchicalStats(new File("./Kingdom"),radio2.isSelected(), Main.multiThread());
+			}
+		}
+	
+		if(checkKingdom.get(1).isSelected()){
+			if(radio0.isSelected())
+				royaumes.get(1).recupFastaLocal();
+			else{
+				avancement = 0;
+				avancementMax = 33756;
+				//Statistiques.hierarchicalStats(new File("./Kingdom/Prokaryotes"),radio2.isSelected(), Main.multiThread());
+			}
+		}
+
+		if(checkKingdom.get(2).isSelected()){
+			if(radio0.isSelected())
+				royaumes.get(2).recupFastaLocal();
+			else{
+				avancement = 0;
+				avancementMax = 4669;
+				//Statistiques.hierarchicalStats(new File("./Kingdom/Virus"),radio2.isSelected(), Main.multiThread());
+			}
+		}
+		avancementMax=100;
 	}
 	
 	/**
@@ -87,41 +197,18 @@ public class Main {
 	public static void actionsBoutonLancer(){
 		btnVerif.setEnabled(false);
 		frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+		service = Executors.newFixedThreadPool(10);
+		if(multiThread()){
+			runThreaded();
+		}else{
+			runMono();
+		}
 		
-		if(checkKingdom.get(0).isSelected()){
-			if(radio0.isSelected())
-				royaumes.get(0).recupFastaLocal();
-			else{
-				if(radio1.isSelected())
-					Statistiques.hierarchicalStats(new File("./Kingdom/Eukaryotes"),false);
-				else
-					Statistiques.hierarchicalStats(new File("./Kingdom/Eukaryotes"),true);
-			}
-		}
-		if(checkKingdom.get(1).isSelected()){
-			if(radio0.isSelected())
-				royaumes.get(1).recupFastaLocal();
-			else{
-				if(radio1.isSelected())
-					Statistiques.hierarchicalStats(new File("./Kingdom/Prokaryotes"),false);
-				else
-					Statistiques.hierarchicalStats(new File("./Kingdom/Prokaryotes"),true);
-			}
-		}
-		if(checkKingdom.get(2).isSelected()){
-			if(radio0.isSelected())
-				royaumes.get(2).recupFastaLocal();
-			else{
-				if(radio1.isSelected())
-					Statistiques.hierarchicalStats(new File("./Kingdom/Virus"),false);
-				else
-					Statistiques.hierarchicalStats(new File("./Kingdom/Virus"),true);
-			}
-			
-		}
+		
 		frame.setCursor(Cursor.getDefaultCursor());
 		btnVerif.setEnabled(true);
 		refreshArborescence();
+		progress(100);
 		progressText("Statistiques terminées !");
 		btnLancer.setText("Lancer");
 	}
@@ -185,19 +272,86 @@ public class Main {
 		scrollPane.setViewportView(arborescence);
 	}
 	
+	private static TreePath find(DefaultMutableTreeNode root, String s) {
+	    @SuppressWarnings("unchecked")
+	    Enumeration<DefaultMutableTreeNode> e = root.depthFirstEnumeration();
+	    while (e.hasMoreElements()) {
+	        DefaultMutableTreeNode node = e.nextElement();
+	        if (node.toString().toLowerCase().contains(s.toLowerCase())) {
+	            return new TreePath(node.getPath());
+	        }
+	    }
+	    return null;
+	}
+	
+	private static void rechercheArbre(){
+		if(!champRecherche.getText().isEmpty()){
+			TreePath path = find(root,champRecherche.getText());
+			arborescence.setSelectionPath(path);
+			arborescence.scrollPathToVisible(path);
+		}
+	}
+	
+	public static void progress(int valeur){progress.setValue(valeur);}
+	public static void progress(boolean valeur){progress.setIndeterminate(!valeur);}
+	
+	public static void progressText(String texte){
+		progressText.setText(texte);
+		progressText.repaint();
+	}
+	
 	/**
-	 * Création de toute l'interface graphique
+	 * 
+	 * @param root
+	 * @return
+	 */
+	public static DefaultMutableTreeNode getSubDirs(File root){
+		DefaultMutableTreeNode racine = new DefaultMutableTreeNode(root,true);
+		File[] list = root.listFiles();
+		if(list!= null){
+			for (int j = 0 ; j<list.length ; j++){
+				DefaultMutableTreeNode file = null;
+				if (list[j].isDirectory()){
+					file = getSubDirs(list[j]);  
+					racine.add(file);
+				}else if(list[j].isFile()){
+					if(list[j].getName().equals("content.txt")){
+						//Skip si on tombe sur ce fichier.
+					}else if(list[j].getName().endsWith(".xls")){
+						
+					}else{
+						file = new DefaultMutableTreeNode(list[j]);
+						file.setAllowsChildren(false);
+						racine.add(file);
+					}
+				}
+			}
+		}
+		return racine;
+	}
+	
+	
+	/**
+	 * Création de toute l'interface graphique.
+	 * <br>On la laisse tout en bas, car elle est assez énorme.
 	 */
 	static void initialize(){
 		try {
 			UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
 		} 
 		catch (Exception e) {
-			// handle exception
+			// Si on arrive pas à charger le thème, au pire c'est pas grave.
+			e.printStackTrace();
 		}
 		frame = new JFrame();
 		try{
-			frame.setIconImage(ImageIO.read(new File("res/icone.png")));
+			
+			File file = new File("res/icone.png");
+			if(file.exists()){
+				frame.setIconImage(ImageIO.read(file));
+			}else{
+				frame.setIconImage(ImageIO.read(m.getClass().getResource("icone.png")));
+			}
 		}catch(IOException e){
 			System.err.println("Icône introuvable");
 		}
@@ -221,6 +375,19 @@ public class Main {
 		JMenu mnFichier = new JMenu("Fichier");
 		menuBar.add(mnFichier);
 		
+		JMenuItem compresser = new JMenuItem("Compresser le dossier Kingdom");
+		mnFichier.add(compresser);
+		compresser.addActionListener(new ActionListener(){
+				public void actionPerformed(ActionEvent arg0) {
+					try{
+						new ZipDirectory(new File("./Kingdom/"));
+						JOptionPane.showMessageDialog(null, "Le dossier Kingdom a bien été compressé", "Compression réussie", JOptionPane.INFORMATION_MESSAGE);
+					}catch(Exception e){
+						JOptionPane.showMessageDialog(null, "Le dossier Kingdom n'a pas pu être compresser", "Erreur de compression", JOptionPane.ERROR_MESSAGE);
+						e.printStackTrace();
+					}
+				}});
+		
 		JMenuItem mntmFermer = new JMenuItem("Fermer");
 		mnFichier.add(mntmFermer);
 		mntmFermer.addActionListener(new ActionListener(){
@@ -231,7 +398,7 @@ public class Main {
 		JMenu parametres = new JMenu("Paramètres");
 		menuBar.add(parametres);
 		
-		checkThread = new JCheckBoxMenuItem("Multi-thread");
+		checkThread = new StayOpenCBItem("Multi-thread");
 		checkThread.setSelected(false);
 		parametres.add(checkThread);
 		
@@ -239,22 +406,22 @@ public class Main {
 		parametres.add(mnArbre);
 		
 		JMenu mnAffichage = new JMenu("Affichage");
-		menuBar.add(mnAffichage);	
+		//menuBar.add(mnAffichage);
 	
-		checkKingdom = new ArrayList<JCheckBoxMenuItem>();
-		checkKingdom.add(new JCheckBoxMenuItem("Eukaryotes"));
+		checkKingdom = new ArrayList<StayOpenCBItem>();
+		checkKingdom.add(new StayOpenCBItem("Eukaryotes"));
 		checkKingdom.get(0).setSelected(true);
 		mnArbre.add(checkKingdom.get(0));
 		
-		checkKingdom.add(new JCheckBoxMenuItem("Prokaryotes"));
+		checkKingdom.add(new StayOpenCBItem("Prokaryotes"));
 		checkKingdom.get(1).setSelected(true);
 		mnArbre.add(checkKingdom.get(1));
 		
-		checkKingdom.add(new JCheckBoxMenuItem("Virus"));
+		checkKingdom.add(new StayOpenCBItem("Virus"));
 		checkKingdom.get(2).setSelected(true);
 		mnArbre.add(checkKingdom.get(2));
 	
-		sauvegarder = new JCheckBoxMenuItem("Sauvegarder les séquences");
+		sauvegarder = new StayOpenCBItem("Sauvegarder les séquences");
 		sauvegarder.setSelected(false);
 		parametres.add(sauvegarder);
 		
@@ -317,7 +484,13 @@ public class Main {
 		 
 		});
 		try{
-			BufferedImage buttonIcon = ImageIO.read(new File("res/loupe.png"));
+			BufferedImage buttonIcon;
+			File file = new File("res/loupe.png");
+			if(file.exists())
+				buttonIcon = ImageIO.read(file);
+			else
+				buttonIcon = ImageIO.read(m.getClass().getResource("loupe.png"));
+			
 			JButton button = new JButton(new ImageIcon(buttonIcon));
 			button.setBorder(BorderFactory.createEmptyBorder());
 			button.setContentAreaFilled(false);
@@ -344,7 +517,8 @@ public class Main {
 			@SuppressWarnings("deprecation")
 			public void actionPerformed(ActionEvent arg0) {
 				if(btnLancer.getText().equals("Lancer")){
-					btnLancer.setText("Interrompre");
+					if(!multiThread())
+						btnLancer.setText("Interrompre");
 					//On va lancer la recherche en ligne
 					Runnable runner = new Runnable(){
 				        public void run() {
@@ -388,57 +562,36 @@ public class Main {
 		
 		frame.setVisible(true);
 	}
-	
-	private static TreePath find(DefaultMutableTreeNode root, String s) {
-	    @SuppressWarnings("unchecked")
-	    Enumeration<DefaultMutableTreeNode> e = root.depthFirstEnumeration();
-	    while (e.hasMoreElements()) {
-	        DefaultMutableTreeNode node = e.nextElement();
-	        if (node.toString().toLowerCase().contains(s.toLowerCase())) {
-	            return new TreePath(node.getPath());
-	        }
-	    }
-	    return null;
-	}
-	
-	private static void rechercheArbre(){
-		if(!champRecherche.getText().isEmpty()){
-			TreePath path = find(root,champRecherche.getText());
-			arborescence.setSelectionPath(path);
-			arborescence.scrollPathToVisible(path);
-		}
-	}
-	
-	public static void progress(int valeur){progress.setValue(valeur);}
-	public static void progress(boolean valeur){progress.setIndeterminate(!valeur);}
-	
-	public static void progressText(String texte){
-		progressText.setText(texte);
-		progressText.repaint();
-	}
-	
-	public static DefaultMutableTreeNode getSubDirs(File root){
-		DefaultMutableTreeNode racine = new DefaultMutableTreeNode(root,true);
-		File[] list = root.listFiles();
-		if(list!= null){
-			for (int j = 0 ; j<list.length ; j++){
-				DefaultMutableTreeNode file = null;
-				if (list[j].isDirectory()){
-					file = getSubDirs(list[j]);  
-					racine.add(file);
-				}else if(list[j].isFile()){
-					if(list[j].getName().equals("content.txt")){
-						//Skip
-					}else if(list[j].getName().endsWith(".xls")){
-						
-					}else{
-						file = new DefaultMutableTreeNode(list[j]);
-						file.setAllowsChildren(false);
-						racine.add(file);
-					}
-				}
-			}
-		}
-		return racine;
-	}
+}
+
+/**
+ * Cette classe, dont la source figure ci-dessous, sert à évider que le menu se ferme quand on coche une case.
+ * <br>Par soucis d'honnêteté elle est laissée intacte et telle qu'elle est trouvée sur le site d'origine.
+ * @author florentin
+ * @see <a href="http://stackoverflow.com/questions/3759379/how-to-prevent-jpopupmenu-disappearing-when-checking-checkboxes-in-it">Origine du code</a>
+ */
+@SuppressWarnings("serial")
+class StayOpenCBItem extends JCheckBoxMenuItem {
+    private static MenuElement[] path;
+
+    {
+        getModel().addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                if (getModel().isArmed() && isShowing()) {
+                    path = MenuSelectionManager.defaultManager().getSelectedPath();
+                }
+            }
+        });
+    }
+
+    public StayOpenCBItem(String text) {
+        super(text);
+    }
+
+    @Override
+    public void doClick(int pressTime) {
+        super.doClick(pressTime);
+        MenuSelectionManager.defaultManager().setSelectedPath(path);
+    }
 }

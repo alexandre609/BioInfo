@@ -6,11 +6,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -52,7 +52,7 @@ public class Statistiques {
 		this.nbErrCds = 0;
 		this.outputSpecific = "";
 		Main.progress.setStringPainted(true);
-		Main.progressText(espece.getOrganism());
+		Main.progressText(espece.getKingdom() +" : " + espece.getOrganism());
 	}
 	
 	public Statistiques(){
@@ -222,107 +222,125 @@ public class Statistiques {
 	}
 	
 	public boolean sortieExcel(){
-		try{
-			Workbook wb = new HSSFWorkbook();
-		    CreationHelper createHelper = wb.getCreationHelper();
-		    Sheet sheet = wb.createSheet("Statistiques");
-		    CellStyle style = wb.createCellStyle();
-	    	style.setAlignment(CellStyle.ALIGN_CENTER);
-
-		    // Create a row and put some cells in it. Rows are 0 based.
-		    Row row = sheet.createRow((short)0);
-
-		    // Or do it on one line.
-		    row.createCell(0).setCellValue("Nom");
-		    if(espece != null){
-			    row.createCell(1).setCellValue(espece.getOrganism());
+		if(nbTrinu != 0){
+			try{
+				Workbook wb = new HSSFWorkbook();
+			    Sheet sheet = wb.createSheet("Statistiques");
+			    CellStyle style = wb.createCellStyle();
+		    	style.setAlignment(CellStyle.ALIGN_CENTER);
+	
+			    Row row = sheet.createRow((short)0);
+			    row.createCell(0).setCellValue("Nom");
 			    
-			    row = sheet.createRow((short)1);
-			    row.createCell(0).setCellValue("Chemin");
-			    row.createCell(1).setCellValue(espece.getKingdom());
-			    row.createCell(2).setCellValue(espece.getGroup());
-			    row.createCell(3).setCellValue(espece.getSubGroup());
-			    row.createCell(4).setCellValue(espece.getOrganism());
-		    }
-		    
-		    row = sheet.createRow((short)2);
-		    row.createCell(0).setCellValue("Nb CDS");
-		    Cell cell = row.createCell(1);
-		    cell.setCellValue(nbCds);	//Compter les CDS des fichiers texte (ou le nombre de fichier texte ?)
-		    cell.setCellStyle(style);
-		    
-		    row = sheet.createRow((short)3);
-		    row.createCell(0).setCellValue("Nb trinucléoitides");
-		    cell = row.createCell(1);
-		    cell.setCellValue(nbTrinu/3);	//Compter les trinucléotides des fichiers texte
-		    cell.setCellStyle(style);
-		    
-		    row = sheet.createRow((short)4);
-		    row.createCell(0).setCellValue("Nb CDS non traités");
-		    cell = row.createCell(1);
-		    cell.setCellValue(nbErrCds);	//Compter les CDS des fichiers texte pas pris en compte
-		    cell.setCellStyle(style);
-		    
-		    
-		    row = sheet.createRow((short)6);
-		    cell = row.createCell(0);
-		    cell.setCellValue("Trinucléotides");
-		    cell.setCellStyle(style);
-		    cell = row.createCell(1);
-		    cell.setCellValue("Nb Ph0");
-		    cell.setCellStyle(style);
-		    cell = row.createCell(2);
-		    cell.setCellValue("Pb Ph0");
-		    cell.setCellStyle(style);
-		    cell = row.createCell(3);
-		    cell.setCellValue("Nb Ph1");
-		    cell.setCellStyle(style);
-		    cell = row.createCell(4);
-		    cell.setCellValue("Pb Ph1");
-		    cell.setCellStyle(style);
-		    cell = row.createCell(5);
-		    cell.setCellValue("Nb Ph2");
-		    cell.setCellStyle(style);
-		    cell = row.createCell(6);
-		    cell.setCellValue("Pb Ph2");
-		    cell.setCellStyle(style);
-		    
-		    calculer(wb, sheet);
-		    for(int i=0;i<7;i++)
-		    	sheet.autoSizeColumn(i);
-		    
-		    File fichier;
-		    
-		    //Si c'est une espèce, on écrit dans le sous-dossier
-		    if(outputSpecific == ""){
-		    	outputSpecific = "Kingdom/" + espece.getKingdom() + "/"+ espece.getGroup() +"/" + espece.getSubGroup() + "/" + espece.getOrganism()+"/";
-		    	fichier = new File(outputSpecific);
-		    	if(!fichier.exists())
-			    	fichier.mkdir();
-			    fichier = new File(outputSpecific +espece.getBioproject() + ".xls");
-		    }
-		    //Sinon on écrit dans le dossier
-		    else{
-		    	if(outputSpecific == null){
-		    		wb.close();
-		    		return false;
-		    	}else
-		    		fichier = new File(outputSpecific + ".xls");
-		    }
-		    
-		    FileOutputStream fileOut = new FileOutputStream(fichier);
-		    wb.write(fileOut);
-		    fileOut.close();
-			wb.close();
-			
-			if(outputSpecific != null){
+			    if(espece != null){
+				    row.createCell(1).setCellValue(espece.getOrganism());
+				    
+				    row = sheet.createRow((short)1);
+				    row.createCell(0).setCellValue("Chemin");
+				    row.createCell(1).setCellValue(espece.getKingdom());
+				    row.createCell(2).setCellValue(espece.getGroup());
+				    row.createCell(3).setCellValue(espece.getSubGroup());
+				    row.createCell(4).setCellValue(espece.getOrganism());
+			    }
+			    
+			    row = sheet.createRow((short)2);
+			    row.createCell(0).setCellValue("Nb CDS");
+			    Cell cell = row.createCell(1);
+			    cell.setCellValue(nbCds);	//Compter les CDS des fichiers texte (ou le nombre de fichier texte ?)
+			    cell.setCellStyle(style);
+			    
+			    //Nb trinucléotides
+			    if(!outputSpecific.equals("")){//espece == null){
+			    	/*row = sheet.createRow((short)3);
+				    row.createCell(0).setCellValue("Nb trinucléotides");
+				    cell = row.createCell(1);
+				    cell.setCellType(Cell.CELL_TYPE_FORMULA);
+				    cell.setCellFormula("(B72 + D72 + F72)/3");
+				    cell.setCellStyle(style);
+			    	*/
+			    	int count = 0;
+			    	for(Trinucl t : this.trinucleotide){
+			    		count += t.getPhase(0);
+			    	}
+			    	nbTrinu = count;
+			    	row = sheet.createRow((short)3);
+				    row.createCell(0).setCellValue("Nb trinucléotides");
+				    cell = row.createCell(1);
+				    cell.setCellValue(nbTrinu);	//Compter les trinucléotides des fichiers texte
+				    cell.setCellStyle(style);
+			    }else{
+				    row = sheet.createRow((short)3);
+				    row.createCell(0).setCellValue("Nb trinucléotides");
+				    cell = row.createCell(1);
+				    cell.setCellValue(nbTrinu/3);	//Compter les trinucléotides des fichiers texte
+				    cell.setCellStyle(style);
+			    }
+			    
+			    row = sheet.createRow((short)4);
+			    row.createCell(0).setCellValue("Nb CDS non traités");
+			    cell = row.createCell(1);
+			    cell.setCellValue(nbErrCds);	//Compter les CDS des fichiers texte pas pris en compte
+			    cell.setCellStyle(style);
+			    
+			    
+			    row = sheet.createRow((short)6);
+			    cell = row.createCell(0);
+			    cell.setCellValue("Trinucléotides");
+			    cell.setCellStyle(style);
+			    cell = row.createCell(1);
+			    cell.setCellValue("Nb Ph0");
+			    cell.setCellStyle(style);
+			    cell = row.createCell(2);
+			    cell.setCellValue("Pb Ph0");
+			    cell.setCellStyle(style);
+			    cell = row.createCell(3);
+			    cell.setCellValue("Nb Ph1");
+			    cell.setCellStyle(style);
+			    cell = row.createCell(4);
+			    cell.setCellValue("Pb Ph1");
+			    cell.setCellStyle(style);
+			    cell = row.createCell(5);
+			    cell.setCellValue("Nb Ph2");
+			    cell.setCellStyle(style);
+			    cell = row.createCell(6);
+			    cell.setCellValue("Pb Ph2");
+			    cell.setCellStyle(style);
+			    
+			    calculer(wb, sheet);
+			    for(int i=0;i<7;i++)
+			    	sheet.autoSizeColumn(i);
+			    
+			    File fichier;
+			    
+			    //Si c'est une espèce, on écrit dans le sous-dossier
+			    if(outputSpecific == ""){
+			    	outputSpecific = "Kingdom/" + espece.getKingdom() + "/"+ espece.getGroup() +"/" + espece.getSubGroup() + "/" + espece.getOrganism()+"/";
+			    	fichier = new File(outputSpecific);
+			    	if(!fichier.exists())
+				    	fichier.mkdir();
+				    fichier = new File(outputSpecific +espece.getBioproject() + ".xls");
+			    }
+			    //Sinon on écrit dans le dossier
+			    else{
+			    	if(outputSpecific == null){
+			    		wb.close();
+			    		return false;
+			    	}else
+			    		fichier = new File(outputSpecific + ".xls");
+			    }
+			    
+			    FileOutputStream fileOut = new FileOutputStream(fichier);
+			    wb.write(fileOut);
+			    fileOut.close();
+				wb.close();
+				
 				Main.progressText(outputSpecific +" : Fichier créé");
-				System.out.println(outputSpecific +" : Fichier créé");
+			}catch (IOException io){
+				io.printStackTrace();
 			}
-		}catch (IOException io){
-			io.printStackTrace();
-		}
-		return true;
+			return true;
+		}else
+			return false;
 	}
 	
 	void initialiserTrinucl(){
@@ -341,11 +359,11 @@ public class Statistiques {
 	 * Disons que dossier est un royaume
 	 * @param dossier
 	 */
-	public static void hierarchicalStats(File dossier, boolean fine){
+	public static void hierarchicalStats(File dossier, boolean fine, final boolean multiThread){
 		//Si c'est bien un dossier et qu'il n'est pas vide
-		if(dossier.isDirectory() && dossier.listFiles() != null){
+		if(dossier.isDirectory() && (!dossier.getName().equals("Sequences")) && dossier.listFiles() != null){
 			//On prend tous les groupes pour faire l'opération
-			if(Main.multiThread()){
+			if(multiThread){
 				final boolean f = fine;
 				final File d = dossier;
 				final File[] sousDossier = dossier.listFiles();
@@ -354,23 +372,33 @@ public class Statistiques {
 					@Override
 					public void run(){
 						for(File fichier : sousDossier){
-							hierarchicalStats(fichier, f);
+							hierarchicalStats(fichier, f, multiThread);
 						}
 						Statistiques stats = new Statistiques();
 						stats.combinerStats(d, f);
 						stats.sortieExcel();
 					}
 				});
+				execute.shutdown();
+				try {
+					execute.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+				}catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 			}
 			else{
 				for(File fichier : dossier.listFiles()){
-					hierarchicalStats(fichier, fine);
+					hierarchicalStats(fichier, fine, multiThread);
 				}
 				Statistiques stats = new Statistiques();
 				stats.combinerStats(dossier, fine);
 				stats.sortieExcel();
 			}
 		}
+		if(Main.avancementMax != 100)
+			Main.progress(((++Main.avancement)*100)/Main.avancementMax);
+		else
+			Main.progress((++Main.avancement)%100);
 	}
 	
 	/**
@@ -402,11 +430,12 @@ public class Statistiques {
 						
 						//On lit nbTrinu
 						cell = sheet.getRow(3).getCell(1);
-						nbErrCds += cell.getNumericCellValue();
+						//nbTrinu += (cell.getNumericCellValue() * 3);
+						nbTrinu += (cell.getNumericCellValue());
 						
 						//On lit nbErrCds
 						cell = sheet.getRow(4).getCell(1);
-						nbTrinu += (cell.getNumericCellValue() * 3);
+						nbErrCds += cell.getNumericCellValue();
 						
 						if(this.espece == null){
 							String kingdom = "";

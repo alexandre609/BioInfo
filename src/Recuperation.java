@@ -2,8 +2,6 @@ import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 
 /**
@@ -55,28 +53,11 @@ public class Recuperation{
 			}
 			
 			if(!existe){
-				if(Main.multiThread()){
-					//Un thread par espèce
-					ExecutorService execute = Executors.newFixedThreadPool(10);
-					final Espece esp = espece;
-					execute.execute(new Runnable(){
-						@Override
-						public void run(){
-							Statistiques stats = new Statistiques(esp);
-							for(String id:esp.getReplicons()){
-								recupFasta(id, esp,save,stats);
-							}
-							stats.sortieExcel();
-						}
-					});
-				}else{
-					//Mono-thread
-					Statistiques stats = new Statistiques(espece);
-					for(String id:espece.getReplicons()){
-						recupFasta(id, espece,save,stats);
-					}
-					stats.sortieExcel();
+				Statistiques stats = new Statistiques(espece);
+				for(String id:espece.getReplicons()){
+					recupFasta(id, espece,save,stats);
 				}
+				stats.sortieExcel();
 			}
 			actu++;
 			act++;
@@ -106,7 +87,6 @@ public class Recuperation{
 			URLConnection urlConnection = url.openConnection();
 			urlConnection.connect();
 			
-			String header = "";
 			String sequence = "";
 			String ligne;
 			
@@ -136,7 +116,6 @@ public class Recuperation{
 							continuer = true;
 						}
 						stats.setHeader(ligne);
-						header=ligne;
 		    		}else{
 		    			//S'il est mauvais, on arrête tout
 		    			stats.erreur();
@@ -317,22 +296,28 @@ public class Recuperation{
 		if(!dir.exists())
 			dir.mkdir();
 		
+		
 		Main.progress(1);
 		BufferedReader reader = null;
 		
 		int avancement = 0;
+		int avMax;
 		
 		try{
 			Main.progressText("Connexion pour : "+kingdom +"...");
+			Main.progress.setStringPainted(false);
 			Main.progress(false);
 			URL url =null;
-			if(kingdom.equals("Prokaryotes"))
+			if(kingdom.equals("Prokaryotes")){
+				avMax = 33756;
 				url = new URL("http://www.ncbi.nlm.nih.gov/genomes/Genome2BE/genome2srv.cgi?action=download&orgn=&report=proks&status=50|40|30|20|&group=--%20All%20Prokaryotes%20--&subgroup=--%20All%20Prokaryotes%20--");
-			else if(kingdom.equals("Eukaryotes"))
+			}else if(kingdom.equals("Eukaryotes")){
+				avMax = 2212;
 				url = new URL("http://www.ncbi.nlm.nih.gov/genomes/Genome2BE/genome2srv.cgi?action=download&orgn=&report=euks&status=50|40|30|20|&group=--%20All%20Eukaryota%20--&subgroup=--%20All%20Eukaryota%20--");
-			else if(kingdom.equals("Virus"))
+			}else if(kingdom.equals("Virus")){
+				avMax = 4669;
 				url = new URL("http://www.ncbi.nlm.nih.gov/genomes/Genome2BE/genome2srv.cgi?action=download&orgn=&report=viruses&status=50|40|30|20|&host=All&group=--%20All%20Viruses%20--&subgroup=--%20All%20Viruses%20--");
-			else return false;
+			}else return false;
 			
 			URLConnection urlConnection = url.openConnection();
 			urlConnection.connect();
@@ -345,9 +330,13 @@ public class Recuperation{
 			
 			Main.progressText("Chargement de : "+kingdom);
 			Main.progress(true);
+			Main.progress.setStringPainted(true);
 	    	while ((line = reader.readLine()) != null){
-	    		avancement = (avancement + 1)%100;
-	    		Main.progress(avancement);
+	    		avancement++;
+	    		int av = (avancement *100/avMax);
+	    		if(av > 100)av=100;
+	    		Main.progress(av);
+	    		
 	    		String[] l = line.split("\t");
 	    		if(!l[parseur.getReplicons()].equals("-")){
 	    			recupere.add(l);
@@ -365,7 +354,7 @@ public class Recuperation{
 	    	Main.progress(99);
 	    	enregistrerInfos();
 	    	Main.progress(100);
-	    	Main.progressText("DONE");
+	    	Main.progressText("Chargement de l'arborescence terminée");
 	    	chargerInfos();
 	    	return true;
 		}catch(Exception e){
